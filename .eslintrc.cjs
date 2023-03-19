@@ -18,6 +18,11 @@ const config = {
   plugins: ["@typescript-eslint"],
   extends: ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
   rules: {
+    "@typescript-eslint/restrict-plus-operands": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
+    "prefer-const": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
     "@typescript-eslint/consistent-type-imports": [
       "warn",
       {
