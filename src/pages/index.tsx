@@ -53,7 +53,7 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     document.body.style.background = "#00101e";
-    socketRef.current = io('http://localhost:3001');
+    socketRef.current = io('http://45.56.88.220:3001/');
 
     const handleGameCreated = (gameData) => {
       playTone((currentBoardIndexRef.current*10) + 300, 0.2);
@@ -223,7 +223,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended }) => {
 
   return (
     <>
-      <div className={`bg-gray-800 grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-500 delay-1000' : ''}`}>
+      <div className={`bg-gray-800 grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-100' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
