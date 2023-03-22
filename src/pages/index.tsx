@@ -1,22 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable prefer-const */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/restrict-plus-operands */
-
-/* eslint-disable @typescript-eslint/consistent-type-imports */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
-
 import { type NextPage } from "next";
 import Head from "next/head";
-import { io, Socket } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
 
 import { useRef, useEffect, useState, useCallback, memo } from "react";
 
+const REMOTE_WS_URL = 'http://45.56.88.220:3001/';
+
 const Home: NextPage = () => {
-  const audioContextRef = useRef(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastPlayedTimeRef = useRef(Date.now());
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
   const totalUpdatesRef = useRef(0);
   const currentBoardIndexRef = useRef(0);
@@ -25,119 +17,130 @@ const Home: NextPage = () => {
   const [statistics, setStatistics] = useState({ xWins: 0, oWins: 0, ties: 0 });
   const [boards, setBoards] = useState(new Map());
   const [tps, setTPS] = useState("0");
+  const [muted, setMuted] = useState(true);
 
   const formatNumberWithCommas = useCallback((num: number) => {
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num);
   }, []);
 
-  const playTone = (freq: number, gain: number) => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new window.AudioContext;
-    }
+  const playTone = useCallback((freq: number, gain: number) => {
+    if (muted) return;
+    
+    // Debounced by delay
+    const DELAY = 10;
+    
+    const currentTime = new Date().getTime();
+    if (currentTime - lastPlayedTimeRef.current >= DELAY) {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new window.AudioContext;
+      }
 
-    let audioContext = audioContextRef.current;
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+      const audioContext = audioContextRef.current;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+    
+      oscillator.type = "sine";
+      oscillator.frequency.value = freq;
+      gainNode.gain.value = gain;
+    
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      lastPlayedTimeRef.current = currentTime;
+
+      oscillator.start();
+      setTimeout(() => {
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
+        oscillator.stop(audioContext.currentTime + 0.1);
+      }, 50);
+    }
+  }, [muted]);
+
+  const handleGameEnded = useCallback((gameEndData: GameEndedData) => {
+    setStatistics((prevStatistics) => {
+      const newStatistics = { ...prevStatistics };
+
+      switch (gameEndData.winner) {
+        case 0: {
+          playTone(110, 0.01);
+          newStatistics.ties = prevStatistics.ties + 1;
+          break;
+        }
+
+        case 1: {
+          playTone(440, 0.01);
+          newStatistics.xWins = prevStatistics.xWins + 1;
+          break;
+        }
+
+        case 2: {
+          playTone(587, 0.01);
+          newStatistics.oWins = prevStatistics.oWins + 1;
+          break;
+        }
+      }
+
+      return newStatistics;
+    });
+
+    setBoards((boards: Map<number, BoardType>) => {
+        const updatedBoards = new Map(boards); 
+
+        for (const [key, board] of boards.entries()) {
+          if (board.id === gameEndData.id) {
+            updatedBoards.set(key, {...board, ended: true});
+
+            return updatedBoards;
+          }
+        }
+
+        return boards;
+    });
+  }, [playTone]);
+
+  const handleGameCreated = useCallback((gameData: GameCreatedData) => {
+    setBoards((boards: Map<number, BoardType>) => {
+      const updatedBoards = new Map(boards);
+      const newIndex = (currentBoardIndexRef.current + 1) % 72;
+      updatedBoards.set(newIndex, { positions: Array.from({ length: 9 }), id: gameData.id, ended: false });
+
+      currentBoardIndexRef.current = newIndex;
   
-    oscillator.type = "square";
-    oscillator.frequency.value = freq; // 440 Hz tone
-    gainNode.gain.value = gain; // Control the volume
+      return updatedBoards;
+    });
+  }, []);
+
+  const handleGameUpdated = useCallback((gameUpdate: GameUpdatedData) => {
+    totalUpdatesRef.current = totalUpdatesRef.current + 1;
   
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    setBoards((boards: Map<number, BoardType>) => {
+      const updatedBoards = new Map(boards);
   
-    oscillator.start();
-    setTimeout(() => {
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
-      oscillator.stop(audioContext.currentTime + 0.1);
-    }, 50); // Stop playing after 0.1 seconds
+      for (const [key, board] of boards.entries()) {
+        if (board.id === gameUpdate.id) {
+          updatedBoards.set(key, {...board, positions: gameUpdate.positions});
+          break;
+        }
+      }
+  
+      return updatedBoards;
+    });
+  }, []);
+
+  const handleMuteButtonClick = () => {
+    setMuted((muted) => { return !muted });
+  };
+
+  const renderBoards = () => {
+    return Array.from(boards.values()).map((board: BoardType) => {
+      return <Board key={board.id} positions={board.positions} ended={board.ended} />
+    });
   };
 
   useEffect(() => {
     document.body.style.background = "#00101e";
-    socketRef.current = io('http://45.56.88.220:3001/');
+    socketRef.current = io(REMOTE_WS_URL);
 
-    const handleGameCreated = (gameData) => {
-      playTone((currentBoardIndexRef.current*10) + 300, 0.2);
-
-      setBoards((boards) => {
-        const updatedBoards = new Map(boards);
-        const newIndex = (currentBoardIndexRef.current + 1) % 72;
-        updatedBoards.set(newIndex, { positions: gameData.positions, id: gameData.id });
-
-        // Update the currentBoardIndexRef using the newIndex value
-        currentBoardIndexRef.current = newIndex;
-    
-        return updatedBoards;
-      });
-    }
-
-    const handleGameUpdated = (gameData) => {
-      totalUpdatesRef.current = totalUpdatesRef.current + 1;
-    
-      setBoards(boards => {
-        let updatedBoards = new Map(boards);
-    
-        // Iterate through the entries of the boards map
-        for (const [key, board] of boards.entries()) {
-          // If the board's id matches the server's value id
-          if (board.id === gameData.id) {
-            // Update the board with the new game data
-            //console.log(`Set board ${key} to server id ${gameData.id}`)
-            updatedBoards.set(key, gameData);
-            break;
-          }
-        }
-    
-        return updatedBoards;
-      });
-    }
-
-    const handleGameEnded = (gameEndData) => {
-      setStatistics((prevStatistics) => {
-        let newStatistics = { ...prevStatistics };
-
-        switch (gameEndData.winner) {
-          case 0: {
-            playTone(90, 1);
-            newStatistics.ties = prevStatistics.ties + 1;
-            break;
-          }
-
-          case 1: {
-            newStatistics.xWins = prevStatistics.xWins + 1;
-            playTone(300, 1);
-            break;
-          }
-
-          case 2: {
-            playTone(600, 1);
-            newStatistics.oWins = prevStatistics.oWins + 1;
-            break;
-          }
-        }
-
-        return newStatistics;
-      });
-
-      setBoards(boards => {
-          const updatedBoards = new Map(boards); 
-
-          for (const [key, board] of boards.entries()) {
-            // If the board's id matches the server's value id
-            if (board.id === gameEndData.id) {
-              // Update the board with the new game data
-              updatedBoards.set(key, {...board, ended: true});
-
-              return updatedBoards;
-            }
-          }
-
-          return boards;
-      });
-    };
-
-    
     socketRef.current?.on('gameCreated', handleGameCreated);
     socketRef.current?.on('gameUpdated', handleGameUpdated);
     socketRef.current?.on('gameEnded', handleGameEnded);
@@ -161,22 +164,15 @@ const Home: NextPage = () => {
     }, 1000);
 
     return () => {
-      console.log("called shutdown")
       clearTimeout(tpsTimer);
+
       socketRef.current?.off('gameCreated', handleGameCreated);
       socketRef.current?.off('gameUpdated', handleGameUpdated);
       socketRef.current?.off('gameEnded', handleGameEnded);
 
       socketRef.current?.disconnect();
-    }
-  }, []);
-
-
-  const renderBoards = () => {
-    return Array.from(boards.values()).map((board) => {
-      return <Board key={board.id} positions={board.positions} ended={board.ended} />
-    });
-  };
+    };
+  }, [formatNumberWithCommas, handleGameCreated, handleGameUpdated, handleGameEnded]);
 
   return (
     <>
@@ -192,6 +188,7 @@ const Home: NextPage = () => {
           <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ statistics.xWins }</span></p>
           <p className="text-green-700">O Wins: <span className="text-black font-bold">{ statistics.oWins }</span></p>
           <p className="text-gray-500">Ties: <span className="text-black font-bold">{ statistics.ties }</span></p>
+          <button onClick={handleMuteButtonClick}>{muted ? 'Click to unmute' : 'Click to mute'}</button>
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5">
@@ -233,7 +230,6 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended }) => {
             playerAtPosition={positions[index]}
           />
         ))}
-        <h2>{ended}</h2>
       </div>
     </>
   )
@@ -251,6 +247,7 @@ const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinningLine}) =
       playerAtPositionString = "X";
       if (isWinningLine) style = style + " bg-orange-500";
       if (!isWinningLine) style = style + " bg-orange-200";
+
       break;
     }
     case 2: {
@@ -269,24 +266,44 @@ const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinningLine}) =
   )
 });
 
+type BoardType = {
+  id: number;
+  positions: Array<number>;
+  ended: boolean;
+}
+
 type BoardProps = {
-  positions: Array<number>,
-  ended: boolean
+  positions: Array<number>;
+  ended: boolean;
 };
 
 type SquareProps = {
-  playerAtPosition: number,
-  isWinningLine: boolean
+  playerAtPosition: number;
+  isWinningLine: boolean;
 };
 
 type ServerToClientEvents = {
-  gameCreated: (data: { id: number }) => void;
-  gameUpdated: (gameData: {id: number, position: Array<number>}) => void;
-  gameEnded: (gameEndData: {id: number, winner: number}) => void;
-}
+  gameCreated: (data: GameCreatedData) => void;
+  gameUpdated: (data: GameUpdatedData) => void;
+  gameEnded: (data: GameEndedData) => void;
+};
 
 type ClientToServerEvents = {
   ping: () => void;
-}
+};
+
+type GameCreatedData = {
+  id: number;
+};
+
+type GameUpdatedData = {
+  id: number;
+  positions: Array<number>;
+};
+
+type GameEndedData = {
+  id: number;
+  winner: number;
+};
 
 export default Home;
