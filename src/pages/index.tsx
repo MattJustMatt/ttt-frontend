@@ -88,7 +88,7 @@ const Home: NextPage = () => {
 
         for (const [key, board] of boards.entries()) {
           if (board.id === gameEndData.id) {
-            updatedBoards.set(key, {...board, ended: true});
+            updatedBoards.set(key, {...board, ended: true, winningLine: gameEndData.winningLine});
 
             return updatedBoards;
           }
@@ -102,7 +102,7 @@ const Home: NextPage = () => {
     setBoards((boards: Map<number, BoardType>) => {
       const updatedBoards = new Map(boards);
       const newIndex = (currentBoardIndexRef.current + 1) % 72;
-      updatedBoards.set(newIndex, { positions: Array.from({ length: 9 }), id: gameData.id, ended: false });
+      updatedBoards.set(newIndex, { positions: Array.from({ length: 9 }), id: gameData.id, ended: false, winningLine: [] });
 
       currentBoardIndexRef.current = newIndex;
   
@@ -129,12 +129,6 @@ const Home: NextPage = () => {
 
   const handleMuteButtonClick = () => {
     setMuted((muted) => { return !muted });
-  };
-
-  const renderBoards = () => {
-    return Array.from(boards.values()).map((board: BoardType) => {
-      return <Board key={board.id} positions={board.positions} ended={board.ended} />
-    });
   };
 
   useEffect(() => {
@@ -174,6 +168,12 @@ const Home: NextPage = () => {
     };
   }, [formatNumberWithCommas, handleGameCreated, handleGameUpdated, handleGameEnded]);
 
+  const renderBoards = () => {
+    return Array.from(boards.values()).map((board: BoardType) => {
+      return <Board key={board.id} positions={board.positions} ended={board.ended} winningLine={board.winningLine} />
+    });
+  };
+
   return (
     <>
       <Head>
@@ -192,41 +192,22 @@ const Home: NextPage = () => {
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5">
-          {renderBoards()}
+          { renderBoards() }
         </div>
       </main>
     </>
   );
 };
 
-const Board: React.FC<BoardProps> = memo(({ positions, ended }) => {
+const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => {
   Board.displayName = "Board";
-
-  const getWinningSquares = useCallback(() => {
-    const winningLines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6]
-    ];
-  
-    for (const line of winningLines) {
-      if (positions[line[0]] && positions[line[0]] === positions[line[1]] && positions[line[0]] === positions[line[2]]) {
-        return line;
-      }
-    }
-  
-    return [];
-  }, [positions]);
-
-  const winningSquares = getWinningSquares();
-
   return (
     <>
       <div className={`bg-gray-800 grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-100' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
-            isWinningLine={winningSquares.includes(index)}
+            isWinning={winningLine.includes(index)}
             playerAtPosition={positions[index]}
           />
         ))}
@@ -236,7 +217,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended }) => {
 });
 
 
-const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinningLine}) => {
+const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinning}) => {
   Square.displayName = "Square";
 
   let playerAtPositionString = '';
@@ -245,15 +226,15 @@ const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinningLine}) =
   switch (playerAtPosition) {
     case 1: {
       playerAtPositionString = "X";
-      if (isWinningLine) style = style + " bg-orange-500";
-      if (!isWinningLine) style = style + " bg-orange-200";
+      if (isWinning) style = style + " bg-orange-500";
+      if (!isWinning) style = style + " bg-orange-200";
 
       break;
     }
     case 2: {
       playerAtPositionString = "O";
-      if (isWinningLine) style = style + " bg-green-500";
-      if (!isWinningLine) style = style + " bg-green-200";
+      if (isWinning) style = style + " bg-green-500";
+      if (!isWinning) style = style + " bg-green-200";
       
       break;
     }
@@ -263,14 +244,15 @@ const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinningLine}) =
     <>
       <div className={style}>{playerAtPositionString}</div>
     </>
-  )
+  );
 });
 
 type BoardType = {
   id: number;
   positions: Array<number>;
   ended: boolean;
-}
+  winningLine: Array<number>;
+};
 
 type BoardProps = {
   positions: Array<number>;
@@ -279,7 +261,7 @@ type BoardProps = {
 
 type SquareProps = {
   playerAtPosition: number;
-  isWinningLine: boolean;
+  isWinning: boolean;
 };
 
 type ServerToClientEvents = {
@@ -303,7 +285,7 @@ type GameUpdatedData = {
 
 type GameEndedData = {
   id: number;
-  winner: number;
+  winningLine: Array<number>;
 };
 
 export default Home;
