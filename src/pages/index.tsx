@@ -256,6 +256,7 @@ type BoardType = {
 
 type BoardProps = {
   positions: Array<number>;
+  winningLine: Array<number>;
   ended: boolean;
 };
 
@@ -285,6 +286,7 @@ type GameUpdatedData = {
 
 type GameEndedData = {
   id: number;
+  winner: number;
   winningLine: Array<number>;
 };
 
