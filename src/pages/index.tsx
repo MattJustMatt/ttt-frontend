@@ -248,8 +248,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        <div className="flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full bg-sky-300 text-md sm:text-lg md:text-2xl shadow-2xl shadow-sky-400">
-          <p>Socket status: <span className={`font-bold ${ connectionStatus === 'connected' ? 'text-green-700' : 'text-red-600'}`}>{connectionStatus}</span></p>
+        <div className={`flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${ connectionStatus === 'connected' ? 'bg-sky-300 shadow-sky-400' : 'bg-red-300 shadow-red-500'} text-md sm:text-lg md:text-2xl shadow-2xl  transition-colors duration-200`}>
           <p>TPS: <span className="font-bold">{formatNumberWithCommas(tps)}</span></p>
           <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.xWins) }</span></p>
           <p className="text-green-700">O Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.oWins) }</span></p>
@@ -269,7 +268,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
   Board.displayName = "Board";
   return (
     <>
-      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-200 delay-75' : ''}`}>
+      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-500 delay-300' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
@@ -286,24 +285,27 @@ const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinning}) => {
   Square.displayName = "Square";
 
   let playerAtPositionString = '';
-  let style = "flex flex-col justify-center border shadow-xl";
+  let style = "flex flex-col justify-center border shadow-2xl";
 
+  let bgColor = 'bg-slate-700';
   switch (playerAtPosition) {
     case 1: {
       playerAtPositionString = "X";
-      if (isWinning) style = style + " bg-orange-500";
-      if (!isWinning) style = style + " bg-orange-200";
+      if (isWinning) bgColor = "bg-orange-500";
+      if (!isWinning) bgColor = "bg-orange-200";
 
       break;
     }
     case 2: {
       playerAtPositionString = "O";
-      if (isWinning) style = style + " bg-green-500";
-      if (!isWinning) style = style + " bg-green-200";
+      if (isWinning) bgColor = "bg-green-500";
+      if (!isWinning) bgColor = "bg-green-200";
       
       break;
     }
   }
+
+  style = style + " " + bgColor;
 
   return (
     <>
