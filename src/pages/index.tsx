@@ -1,22 +1,98 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { io, type Socket } from 'socket.io-client';
 
 import { useRef, useEffect, useState, useCallback, memo } from "react";
 
-const REMOTE_WS_URL = 'http://45.56.88.220:3001/';
+const REMOTE_WS_URL = process.env.NEXT_PUBLIC_REMOTE_WS_URL;
+
+class TTTRealtimeSocket {
+  websocket: WebSocket;
+  url: string;
+  onCreate: (id: number) => void;
+  onUpdate: (id: number, positions: Array<number>) => void;
+  onEnd: (id: number, winner: number, winningLine: Array<number>) => void;
+  onDisconnected: () => void;
+  onConnected: () => void;
+  private reconnectBackoff = 500;
+  private reconnectBackoffMax = 10000;
+  private reconnectDelay = 0;
+  private reconnectTimerId: number;
+  private disconnectRequested = false;
+
+  constructor(url: string, onCreate, onUpdate, onEnd) {
+    this.url = url;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.onCreate = onCreate;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.onUpdate = onUpdate;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.onEnd = onEnd;
+  }
+
+  private setEventHandlers() {
+    this.websocket.onmessage = this.handleMessage;
+    this.websocket.onopen = () => {
+      this.reconnectDelay = 0;
+      clearInterval(this.reconnectTimerId);
+      this.onConnected();
+    };
+    this.websocket.onclose = () => {
+      // Reconnect logic
+      if (!this.disconnectRequested) {
+        this.connect();
+
+      }
+      this.onDisconnected();
+    }
+  }
+
+  private handleMessage = (ev: MessageEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
+    const serverMessage: [string, Record<string, unknown>] = JSON.parse(ev.data);
+
+    const [event, data] = serverMessage;
+
+    if (event === "c") {
+      this.onCreate(data.i as number);
+    } else if (event === "u") {
+      this.onUpdate(data.i as number, data.p as Array<number>);
+    } else if (event === "e") {
+      this.onEnd(data.i as number, data.w as number, data.wl as Array<number>);
+    }
+  };
+
+  connect() {
+    console.log(`Attempting reconnect delay ${this.reconnectDelay}`);
+    this.reconnectDelay = this.reconnectDelay < this.reconnectBackoffMax ? this.reconnectDelay + this.reconnectBackoff : this.reconnectBackoffMax;
+
+    // Don't open a connection if it's already open. Ready state 3 is closed (not re-openable)
+    if (this.websocket && this.websocket?.readyState !== 3) {
+      console.log("[SOCKET] Attempted to reconnect to an already open socket ", this.websocket.readyState);
+      return;
+    }
+
+    const url = new URL(this.url);
+    this.websocket = new WebSocket(url.href);
+
+    this.setEventHandlers();
+  }
+
+  disconnect() {
+    this.websocket.close();
+  }
+}
 
 const Home: NextPage = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const lastPlayedTimeRef = useRef(Date.now());
-  const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  const realtimeSocketRef = useRef<TTTRealtimeSocket>();
   const totalUpdatesRef = useRef(0);
   const currentBoardIndexRef = useRef(0);
 
   const [connectionStatus, setConnectionStatus] = useState("loading");
   const [statistics, setStatistics] = useState({ xWins: 0, oWins: 0, ties: 0 });
   const [boards, setBoards] = useState(new Map());
-  const [tps, setTPS] = useState("0");
+  const [tps, setTPS] = useState(0);
   const [muted, setMuted] = useState(true);
 
   const formatNumberWithCommas = useCallback((num: number) => {
@@ -56,11 +132,40 @@ const Home: NextPage = () => {
     }
   }, [muted]);
 
-  const handleGameEnded = useCallback((gameEndData: GameEndedData) => {
+  const handleGameCreated = useCallback((gameId: number) => {
+    setBoards((boards: Map<number, BoardType>) => {
+      const updatedBoards = new Map(boards);
+      const newIndex = (currentBoardIndexRef.current + 1) % 72;
+      updatedBoards.set(newIndex, { positions: Array.from({ length: 9 }), id: gameId, ended: false, winningLine: [] });
+
+      currentBoardIndexRef.current = newIndex;
+  
+      return updatedBoards;
+    });
+  }, []);
+
+  const handleGameUpdated = useCallback((gameId: number, positions: Array<number>) => {
+    totalUpdatesRef.current = totalUpdatesRef.current + 1;
+  
+    setBoards((boards: Map<number, BoardType>) => {
+      const updatedBoards = new Map(boards);
+  
+      for (const [key, board] of boards.entries()) {
+        if (board.id === gameId) {
+          updatedBoards.set(key, {...board, positions: positions});
+          break;
+        }
+      }
+  
+      return updatedBoards;
+    });
+  }, []);
+
+  const handleGameEnded = useCallback((gameId: number, winner: number, winningLine: Array<number>) => {
     setStatistics((prevStatistics) => {
       const newStatistics = { ...prevStatistics };
 
-      switch (gameEndData.winner) {
+      switch (winner) {
         case 0: {
           playTone(110, 0.01);
           newStatistics.ties = prevStatistics.ties + 1;
@@ -87,8 +192,8 @@ const Home: NextPage = () => {
         const updatedBoards = new Map(boards); 
 
         for (const [key, board] of boards.entries()) {
-          if (board.id === gameEndData.id) {
-            updatedBoards.set(key, {...board, ended: true, winningLine: gameEndData.winningLine});
+          if (board.id === gameId) {
+            updatedBoards.set(key, {...board, ended: true, winningLine: winningLine});
 
             return updatedBoards;
           }
@@ -98,73 +203,34 @@ const Home: NextPage = () => {
     });
   }, [playTone]);
 
-  const handleGameCreated = useCallback((gameData: GameCreatedData) => {
-    setBoards((boards: Map<number, BoardType>) => {
-      const updatedBoards = new Map(boards);
-      const newIndex = (currentBoardIndexRef.current + 1) % 72;
-      updatedBoards.set(newIndex, { positions: Array.from({ length: 9 }), id: gameData.id, ended: false, winningLine: [] });
-
-      currentBoardIndexRef.current = newIndex;
-  
-      return updatedBoards;
-    });
-  }, []);
-
-  const handleGameUpdated = useCallback((gameUpdate: GameUpdatedData) => {
-    totalUpdatesRef.current = totalUpdatesRef.current + 1;
-  
-    setBoards((boards: Map<number, BoardType>) => {
-      const updatedBoards = new Map(boards);
-  
-      for (const [key, board] of boards.entries()) {
-        if (board.id === gameUpdate.id) {
-          updatedBoards.set(key, {...board, positions: gameUpdate.positions});
-          break;
-        }
-      }
-  
-      return updatedBoards;
-    });
-  }, []);
-
   const handleMuteButtonClick = () => {
     setMuted((muted) => { return !muted });
   };
 
   useEffect(() => {
-    document.body.style.background = "#00101e";
-    socketRef.current = io(REMOTE_WS_URL);
+    realtimeSocketRef.current = new TTTRealtimeSocket(REMOTE_WS_URL, handleGameCreated, handleGameUpdated, handleGameEnded);
 
-    socketRef.current?.on('gameCreated', handleGameCreated);
-    socketRef.current?.on('gameUpdated', handleGameUpdated);
-    socketRef.current?.on('gameEnded', handleGameEnded);
-
-    socketRef.current?.on('connect', () => {
+    realtimeSocketRef.current.onConnected = () => {
       setConnectionStatus("connected");
-      console.log("Connected to tictac websockets");
-    });
+      console.log("[REALTIME] Connected");
+    }
+    realtimeSocketRef.current.connect();
 
-    socketRef.current?.on('disconnect', () => {
+    realtimeSocketRef.current.onDisconnected = () => {
       setConnectionStatus("disconnected");
-      console.log("Disconnected from tictac websockets");
+      console.log("[REALTIME] Disconnected");
       setBoards(new Map());
-    });
+    };
 
     const tpsTimer = setInterval(() => {
-      setTPS(formatNumberWithCommas(totalUpdatesRef.current));
+      setTPS(totalUpdatesRef.current);
       totalUpdatesRef.current = 0;
-
-      socketRef.current?.emit('ping');
     }, 1000);
 
     return () => {
       clearTimeout(tpsTimer);
 
-      socketRef.current?.off('gameCreated', handleGameCreated);
-      socketRef.current?.off('gameUpdated', handleGameUpdated);
-      socketRef.current?.off('gameEnded', handleGameEnded);
-
-      socketRef.current?.disconnect();
+      realtimeSocketRef.current.disconnect();
     };
   }, [formatNumberWithCommas, handleGameCreated, handleGameUpdated, handleGameEnded]);
 
@@ -182,13 +248,13 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        <div className="flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full text-gray-0 bg-blue-300 text-md sm:text-lg md:text-2xl">
+        <div className="flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full bg-sky-300 text-md sm:text-lg md:text-2xl shadow-2xl shadow-sky-400">
           <p>Socket status: <span className={`font-bold ${ connectionStatus === 'connected' ? 'text-green-700' : 'text-red-600'}`}>{connectionStatus}</span></p>
-          <p>TPS: <span className="font-bold">{tps}</span></p>
-          <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ statistics.xWins }</span></p>
-          <p className="text-green-700">O Wins: <span className="text-black font-bold">{ statistics.oWins }</span></p>
-          <p className="text-gray-500">Ties: <span className="text-black font-bold">{ statistics.ties }</span></p>
-          <button onClick={handleMuteButtonClick}>{muted ? 'Click to unmute' : 'Click to mute'}</button>
+          <p>TPS: <span className="font-bold">{formatNumberWithCommas(tps)}</span></p>
+          <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.xWins) }</span></p>
+          <p className="text-green-700">O Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.oWins) }</span></p>
+          <p className="text-gray-500">Ties: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.ties) }</span></p>
+          {/*<button onClick={handleMuteButtonClick}>{muted ? 'Click to unmute' : 'Click to mute'}</button>*/}
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5">
@@ -203,7 +269,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
   Board.displayName = "Board";
   return (
     <>
-      <div className={`bg-gray-800 grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-100' : ''}`}>
+      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-200 delay-75' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
@@ -215,7 +281,6 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
     </>
   )
 });
-
 
 const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinning}) => {
   Square.displayName = "Square";
@@ -263,31 +328,6 @@ type BoardProps = {
 type SquareProps = {
   playerAtPosition: number;
   isWinning: boolean;
-};
-
-type ServerToClientEvents = {
-  gameCreated: (data: GameCreatedData) => void;
-  gameUpdated: (data: GameUpdatedData) => void;
-  gameEnded: (data: GameEndedData) => void;
-};
-
-type ClientToServerEvents = {
-  ping: () => void;
-};
-
-type GameCreatedData = {
-  id: number;
-};
-
-type GameUpdatedData = {
-  id: number;
-  positions: Array<number>;
-};
-
-type GameEndedData = {
-  id: number;
-  winner: number;
-  winningLine: Array<number>;
 };
 
 export default Home;
