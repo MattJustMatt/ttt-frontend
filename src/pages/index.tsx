@@ -88,6 +88,8 @@ const Home: NextPage = () => {
   const realtimeSocketRef = useRef<TTTRealtimeSocket>();
   const totalUpdatesRef = useRef(0);
   const currentBoardIndexRef = useRef(0);
+  const maxBoardsRef = useRef(5);
+
 
   const [connectionStatus, setConnectionStatus] = useState("loading");
   const [statistics, setStatistics] = useState({ xWins: 0, oWins: 0, ties: 0 });
@@ -97,6 +99,26 @@ const Home: NextPage = () => {
 
   const formatNumberWithCommas = useCallback((num: number) => {
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      console.log(window.innerWidth);
+      if (window.innerWidth < 600) {
+        maxBoardsRef.current = 17;
+      } else if (window.innerWidth <= 1024) {
+        maxBoardsRef.current = 41;
+      } else {
+        maxBoardsRef.current = 71;
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    }
   }, []);
 
   const playTone = useCallback((freq: number, gain: number) => {
@@ -135,10 +157,14 @@ const Home: NextPage = () => {
   const handleGameCreated = useCallback((gameId: number) => {
     setBoards((boards: Map<number, BoardType>) => {
       const updatedBoards = new Map(boards);
-      const newIndex = (currentBoardIndexRef.current + 1) % 72;
-      updatedBoards.set(newIndex, { positions: Array.from({ length: 9 }), id: gameId, ended: false, winningLine: [] });
 
-      currentBoardIndexRef.current = newIndex;
+      if (currentBoardIndexRef.current < maxBoardsRef.current) {
+        currentBoardIndexRef.current += 1;
+      } else {
+        currentBoardIndexRef.current = 0;
+      }
+      
+      updatedBoards.set(currentBoardIndexRef.current, { positions: Array.from({ length: 9 }), id: gameId, ended: false, winningLine: [] });
   
       return updatedBoards;
     });
@@ -253,7 +279,7 @@ const Home: NextPage = () => {
           <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.xWins) }</span></p>
           <p className="text-green-700">O Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.oWins) }</span></p>
           <p className="text-gray-500">Ties: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.ties) }</span></p>
-          {/*<button onClick={handleMuteButtonClick}>{muted ? 'Click to unmute' : 'Click to mute'}</button>*/}
+          <button onClick={handleMuteButtonClick}>{muted ? 'Click to unmute' : 'Click to mute'}</button>
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5">
