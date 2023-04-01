@@ -78,7 +78,7 @@ class TTTRealtimeSocket {
 
     // Don't open a connection if it's already open. Ready state 3 is closed (not re-openable)
     if (this.websocket && this.websocket?.readyState !== 3) {
-      console.log("[SOCKET] Attempted to reconnect to an already open socket ", this.websocket.readyState);
+      console.log(`[SOCKET] Attempted to reconnect to an already open socket ${this.websocket.readyState}`);
       return;
     }
 
@@ -188,7 +188,7 @@ const Home: NextPage = () => {
     totalUpdatesRef.current = totalUpdatesRef.current + 1;
 
     if (endedGames.current.includes(gameId)) {
-      console.log("Received update for ended game " + gameId);
+      console.error(`Received update for ended game ${gameId}`);
     }
   
     setBoards((boards: Map<number, BoardType>) => {
