@@ -8,18 +8,21 @@ const REMOTE_WS_URL = process.env.NEXT_PUBLIC_REMOTE_WS_URL;
 class TTTRealtimeSocket {
   websocket: WebSocket;
   url: string;
+
   onCreate: (id: number) => void;
   onUpdate: (id: number, positions: Array<number>) => void;
   onEnd: (id: number, winner: number, winningLine: Array<number>) => void;
+  onConnections: (connections: number) => void;
   onDisconnected: () => void;
   onConnected: () => void;
+  
   private reconnectBackoff = 500;
   private reconnectBackoffMax = 10000;
   private reconnectDelay = 0;
   private reconnectTimerId: number;
   private disconnectRequested = false;
 
-  constructor(url: string, onCreate, onUpdate, onEnd) {
+  constructor(url: string, onCreate, onUpdate, onEnd, onConnections) {
     this.url = url;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.onCreate = onCreate;
@@ -27,6 +30,8 @@ class TTTRealtimeSocket {
     this.onUpdate = onUpdate;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.onEnd = onEnd;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.onConnections = onConnections;
   }
 
   private setEventHandlers() {
@@ -36,13 +41,17 @@ class TTTRealtimeSocket {
       clearInterval(this.reconnectTimerId);
       this.onConnected();
     };
-    this.websocket.onclose = () => {
-      // Reconnect logic
-      if (!this.disconnectRequested) {
-        this.connect();
-
-      }
+    this.websocket.onclose = (ev) => {
       this.onDisconnected();
+
+      if (!this.disconnectRequested) {
+        console.log(`[REALTIME] Connection closed without being requested [code: ${ ev.code } reason: ${ ev.reason }] reconnecting...`);
+        this.disconnectRequested = false;
+        this.connect();
+      }
+    }
+    this.websocket.onerror = (err) => {
+      console.error(err);
     }
   }
 
@@ -58,11 +67,13 @@ class TTTRealtimeSocket {
       this.onUpdate(data.i as number, data.p as Array<number>);
     } else if (event === "e") {
       this.onEnd(data.i as number, data.w as number, data.wl as Array<number>);
+    } else if (event === "s") {
+      this.onConnections(data.conn as number);
     }
   };
 
   connect() {
-    console.log(`Attempting reconnect delay ${this.reconnectDelay}`);
+    console.log(`[REALTIME] Connecting...`);
     this.reconnectDelay = this.reconnectDelay < this.reconnectBackoffMax ? this.reconnectDelay + this.reconnectBackoff : this.reconnectBackoffMax;
 
     // Don't open a connection if it's already open. Ready state 3 is closed (not re-openable)
@@ -78,6 +89,7 @@ class TTTRealtimeSocket {
   }
 
   disconnect() {
+    this.disconnectRequested = true;
     this.websocket.close();
   }
 }
@@ -90,12 +102,14 @@ const Home: NextPage = () => {
   const currentBoardIndexRef = useRef(0);
   const maxBoardsRef = useRef(5);
 
+  const endedGames = useRef([]);
 
   const [connectionStatus, setConnectionStatus] = useState("loading");
   const [statistics, setStatistics] = useState({ xWins: 0, oWins: 0, ties: 0 });
   const [boards, setBoards] = useState(new Map());
   const [tps, setTPS] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [connections, setConnections] = useState(0);
 
   const formatNumberWithCommas = useCallback((num: number) => {
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num);
@@ -103,7 +117,6 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      console.log(window.innerWidth);
       if (window.innerWidth < 600) {
         maxBoardsRef.current = 17;
       } else if (window.innerWidth <= 1024) {
@@ -155,6 +168,8 @@ const Home: NextPage = () => {
   }, [muted]);
 
   const handleGameCreated = useCallback((gameId: number) => {
+    totalUpdatesRef.current = totalUpdatesRef.current + 1;
+
     setBoards((boards: Map<number, BoardType>) => {
       const updatedBoards = new Map(boards);
 
@@ -164,14 +179,17 @@ const Home: NextPage = () => {
         currentBoardIndexRef.current = 0;
       }
       
-      updatedBoards.set(currentBoardIndexRef.current, { positions: Array.from({ length: 9 }), id: gameId, ended: false, winningLine: [] });
-  
+      updatedBoards.set(currentBoardIndexRef.current, { id: gameId, positions: Array.from({ length: 9 }), ended: false, winningLine: [] });
       return updatedBoards;
     });
   }, []);
 
   const handleGameUpdated = useCallback((gameId: number, positions: Array<number>) => {
     totalUpdatesRef.current = totalUpdatesRef.current + 1;
+
+    if (endedGames.current.includes(gameId)) {
+      console.log("Received update for ended game " + gameId);
+    }
   
     setBoards((boards: Map<number, BoardType>) => {
       const updatedBoards = new Map(boards);
@@ -188,6 +206,8 @@ const Home: NextPage = () => {
   }, []);
 
   const handleGameEnded = useCallback((gameId: number, winner: number, winningLine: Array<number>) => {
+    totalUpdatesRef.current = totalUpdatesRef.current + 1;
+
     setStatistics((prevStatistics) => {
       const newStatistics = { ...prevStatistics };
 
@@ -219,6 +239,7 @@ const Home: NextPage = () => {
 
         for (const [key, board] of boards.entries()) {
           if (board.id === gameId) {
+            endedGames.current.push(gameId);
             updatedBoards.set(key, {...board, ended: true, winningLine: winningLine});
 
             return updatedBoards;
@@ -229,12 +250,16 @@ const Home: NextPage = () => {
     });
   }, [playTone]);
 
+  const handleConnections = useCallback((connections: number) => {
+    setConnections(connections);
+  }, []);
+
   const handleMuteButtonClick = () => {
     setMuted((muted) => { return !muted });
   };
 
   useEffect(() => {
-    realtimeSocketRef.current = new TTTRealtimeSocket(REMOTE_WS_URL, handleGameCreated, handleGameUpdated, handleGameEnded);
+    realtimeSocketRef.current = new TTTRealtimeSocket(REMOTE_WS_URL, handleGameCreated, handleGameUpdated, handleGameEnded, handleConnections);
 
     realtimeSocketRef.current.onConnected = () => {
       setConnectionStatus("connected");
@@ -258,7 +283,7 @@ const Home: NextPage = () => {
 
       realtimeSocketRef.current.disconnect();
     };
-  }, [formatNumberWithCommas, handleGameCreated, handleGameUpdated, handleGameEnded]);
+  }, [formatNumberWithCommas, handleGameCreated, handleGameUpdated, handleGameEnded, handleConnections]);
 
   const renderBoards = () => {
     return Array.from(boards.values()).map((board: BoardType) => {
@@ -270,12 +295,15 @@ const Home: NextPage = () => {
     <>
       <Head>
         <title>Tic Tac YOOO</title>
+        <meta name="description" content="Experience Tic Tac Toe like never before. Join the realtime online multiplayer viewing experience and enjoy watching games unfold live!" />
+        <meta name="keywords" content="Tic Tac Toe, multiplayer, realtime, online, game, viewing experience" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main>
         <div className={`flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${ connectionStatus === 'connected' ? 'bg-sky-300 shadow-sky-400' : 'bg-red-300 shadow-red-500'} text-md sm:text-lg md:text-2xl shadow-2xl  transition-colors duration-200`}>
           <p>TPS: <span className="font-bold">{formatNumberWithCommas(tps)}</span></p>
+          <p>Viewers: <span className="font-bold">{formatNumberWithCommas(connections)}</span></p>
           <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.xWins) }</span></p>
           <p className="text-green-700">O Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.oWins) }</span></p>
           <p className="text-gray-500">Ties: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.ties) }</span></p>
@@ -294,7 +322,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
   Board.displayName = "Board";
   return (
     <>
-      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-500 delay-300' : ''}`}>
+      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-500 md:delay-300' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
