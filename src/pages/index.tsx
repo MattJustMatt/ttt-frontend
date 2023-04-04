@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { type NextPage } from "next";
 import Head from "next/head";
+import msgpack from 'msgpack5';
 
 import { useRef, useEffect, useState, useCallback, memo } from "react";
 
@@ -8,9 +12,10 @@ const REMOTE_WS_URL = process.env.NEXT_PUBLIC_REMOTE_WS_URL;
 class TTTRealtimeSocket {
   websocket: WebSocket;
   url: string;
+  msgPack;
 
   onCreate: (id: number) => void;
-  onUpdate: (id: number, positions: Array<number>) => void;
+  onUpdate: (id: number, position: number, newPlayer: number) => void;
   onEnd: (id: number, winner: number, winningLine: Array<number>) => void;
   onConnections: (connections: number) => void;
   onDisconnected: () => void;
@@ -23,6 +28,7 @@ class TTTRealtimeSocket {
   private disconnectRequested = false;
 
   constructor(url: string, onCreate, onUpdate, onEnd, onConnections) {
+    this.msgPack = msgpack();
     this.url = url;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.onCreate = onCreate;
@@ -55,20 +61,20 @@ class TTTRealtimeSocket {
     }
   }
 
-  private handleMessage = (ev: MessageEvent) => {
+  private handleMessage = async (ev: MessageEvent) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
-    const serverMessage: [string, Record<string, unknown>] = JSON.parse(ev.data);
+    const arrayBuffer = await ev.data.arrayBuffer();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const decodedData: Map<number, number | object> = this.msgPack.decode(new Uint8Array(arrayBuffer));
 
-    const [event, data] = serverMessage;
-
-    if (event === "c") {
-      this.onCreate(data.i as number);
-    } else if (event === "u") {
-      this.onUpdate(data.i as number, data.p as Array<number>);
-    } else if (event === "e") {
-      this.onEnd(data.i as number, data.w as number, data.wl as Array<number>);
-    } else if (event === "s") {
-      this.onConnections(data.conn as number);
+    if (typeof decodedData === 'number') {
+      this.onCreate(decodedData);
+    } else {
+      if (typeof decodedData[2] === 'object') {
+        this.onEnd(decodedData[0] as number, decodedData[1] as number, decodedData[2] as Array<number>);
+      } else {
+        this.onUpdate(decodedData[0] as number, decodedData[1] as number, decodedData[2] as number);
+      }
     }
   };
 
@@ -169,34 +175,38 @@ const Home: NextPage = () => {
 
   const handleGameCreated = useCallback((gameId: number) => {
     totalUpdatesRef.current = totalUpdatesRef.current + 1;
-
-    setBoards((boards: Map<number, BoardType>) => {
-      const updatedBoards = new Map(boards);
-
+  
+    setBoards((prevBoards: Map<number, BoardType>) => {
+      const updatedBoards = new Map(prevBoards);
+  
       if (currentBoardIndexRef.current < maxBoardsRef.current) {
         currentBoardIndexRef.current += 1;
       } else {
         currentBoardIndexRef.current = 0;
       }
       
-      updatedBoards.set(currentBoardIndexRef.current, { id: gameId, positions: Array.from({ length: 9 }), ended: false, winningLine: [] });
+      updatedBoards.set(currentBoardIndexRef.current, { id: gameId, positions: Array(9).fill(0), ended: false, winningLine: [] });
       return updatedBoards;
     });
   }, []);
 
-  const handleGameUpdated = useCallback((gameId: number, positions: Array<number>) => {
+  const handleGameUpdated = useCallback((gameId: number, position: number, newPlayer: number) => {
     totalUpdatesRef.current = totalUpdatesRef.current + 1;
-
+  
     if (endedGames.current.includes(gameId)) {
       console.error(`Received update for ended game ${gameId}`);
+      return;
     }
   
-    setBoards((boards: Map<number, BoardType>) => {
-      const updatedBoards = new Map(boards);
+    setBoards((prevBoards: Map<number, BoardType>) => {
+      const updatedBoards = new Map(prevBoards);
   
-      for (const [key, board] of boards.entries()) {
+      for (const [key, board] of updatedBoards.entries()) {
         if (board.id === gameId) {
-          updatedBoards.set(key, {...board, positions: positions});
+          
+          board.positions = Array.from(board.positions);
+          board.positions[position] = newPlayer;
+          updatedBoards.set(key, board);
           break;
         }
       }
@@ -234,10 +244,10 @@ const Home: NextPage = () => {
       return newStatistics;
     });
 
-    setBoards((boards: Map<number, BoardType>) => {
-        const updatedBoards = new Map(boards); 
+    setBoards((prevBoards: Map<number, BoardType>) => {
+        const updatedBoards = new Map(prevBoards); 
 
-        for (const [key, board] of boards.entries()) {
+        for (const [key, board] of updatedBoards.entries()) {
           if (board.id === gameId) {
             endedGames.current.push(gameId);
             updatedBoards.set(key, {...board, ended: true, winningLine: winningLine});
@@ -246,7 +256,7 @@ const Home: NextPage = () => {
           }
         }
 
-        return boards;
+        return updatedBoards;
     });
   }, [playTone]);
 
@@ -320,6 +330,7 @@ const Home: NextPage = () => {
 
 const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => {
   Board.displayName = "Board";
+
   return (
     <>
       <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-500 md:delay-300' : ''}`}>
