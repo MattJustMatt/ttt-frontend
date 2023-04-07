@@ -70,9 +70,15 @@ class TTTRealtimeSocket {
     if (typeof decodedData === 'number') {
       this.onCreate(decodedData);
     } else {
+      // End events will have data[2] as an object, representing the winningLine. 
       if (typeof decodedData[2] === 'object') {
         this.onEnd(decodedData[0] as number, decodedData[1] as number, decodedData[2] as Array<number>);
       } else {
+        if (decodedData[0] === -1) {
+          this.onConnections(decodedData[1] as number);
+          return;
+        }
+
         this.onUpdate(decodedData[0] as number, decodedData[1] as number, decodedData[2] as number);
       }
     }
@@ -203,7 +209,6 @@ const Home: NextPage = () => {
   
       for (const [key, board] of updatedBoards.entries()) {
         if (board.id === gameId) {
-          
           board.positions = Array.from(board.positions);
           board.positions[position] = newPlayer;
           updatedBoards.set(key, board);
