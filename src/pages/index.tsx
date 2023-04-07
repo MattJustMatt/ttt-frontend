@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { type NextPage } from "next";
+import { useRouter } from 'next/router';
 import Head from "next/head";
 import msgpack from 'msgpack5';
 
@@ -107,6 +108,8 @@ class TTTRealtimeSocket {
 }
 
 const Home: NextPage = () => {
+  const router = useRouter();
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const lastPlayedTimeRef = useRef(Date.now());
   const realtimeSocketRef = useRef<TTTRealtimeSocket>();
@@ -122,10 +125,16 @@ const Home: NextPage = () => {
   const [tps, setTPS] = useState(0);
   const [muted, setMuted] = useState(true);
   const [connections, setConnections] = useState(0);
+  const [showStats, setShowStats] = useState(true);
 
   const formatNumberWithCommas = useCallback((num: number) => {
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num);
   }, []);
+
+  useEffect(() => {
+    setShowStats(router.query.showStats === 'false' ? false : true);
+    setMuted(router.query.muted === 'false' ? false : true);
+  }, [router.query]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -316,7 +325,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main style={{ overflow: 'hidden', maxHeight: '100vh' }}>
-        <div className={`flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${ connectionStatus === 'connected' ? 'bg-sky-300 shadow-sky-400' : 'bg-red-300 shadow-red-500'} text-md sm:text-lg md:text-2xl shadow-2xl  transition-colors duration-200`}>
+        {showStats && <div className={`flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${ connectionStatus === 'connected' ? 'bg-sky-300 shadow-sky-400' : 'bg-red-300 shadow-red-500'} text-md sm:text-lg md:text-2xl shadow-2xl  transition-colors duration-200`}>
           <p>TPS: <span className="font-bold">{formatNumberWithCommas(tps)}</span></p>
           <p>Viewers: <span className="font-bold">{formatNumberWithCommas(connections)}</span></p>
           <p className="text-orange-700">X Wins: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.xWins) }</span></p>
@@ -324,6 +333,7 @@ const Home: NextPage = () => {
           <p className="text-gray-500">Ties: <span className="text-black font-bold">{ formatNumberWithCommas(statistics.ties) }</span></p>
           <button onClick={handleMuteButtonClick}>{muted ? 'Click to unmute' : 'Click to mute'}</button>
         </div>
+        }
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5">
           { renderBoards() }
