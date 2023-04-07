@@ -315,7 +315,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>
+      <main style={{ overflow: 'hidden', maxHeight: '100vh' }}>
         <div className={`flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${ connectionStatus === 'connected' ? 'bg-sky-300 shadow-sky-400' : 'bg-red-300 shadow-red-500'} text-md sm:text-lg md:text-2xl shadow-2xl  transition-colors duration-200`}>
           <p>TPS: <span className="font-bold">{formatNumberWithCommas(tps)}</span></p>
           <p>Viewers: <span className="font-bold">{formatNumberWithCommas(connections)}</span></p>
@@ -333,12 +333,19 @@ const Home: NextPage = () => {
   );
 };
 
+type BoardProps = {
+  positions: Array<number>;
+  winningLine: Array<number>;
+  ended: boolean;
+};
+
 const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => {
   Board.displayName = "Board";
+  const isEmpty = !positions.find((square => square === 1 || square === 2));
 
   return (
     <>
-      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0 transition-opacity duration-500 md:delay-300' : ''}`}>
+      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${isEmpty ? 'ring-4 ring-blue-500' : ''} ${ended ? 'opacity-0 transition-opacity duration-500 md:delay-300' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
@@ -350,6 +357,11 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
     </>
   )
 });
+
+type SquareProps = {
+  playerAtPosition: number;
+  isWinning: boolean;
+};
 
 const Square: React.FC<SquareProps> = memo(({playerAtPosition, isWinning}) => {
   Square.displayName = "Square";
@@ -389,17 +401,6 @@ type BoardType = {
   positions: Array<number>;
   ended: boolean;
   winningLine: Array<number>;
-};
-
-type BoardProps = {
-  positions: Array<number>;
-  winningLine: Array<number>;
-  ended: boolean;
-};
-
-type SquareProps = {
-  playerAtPosition: number;
-  isWinning: boolean;
 };
 
 export default Home;
