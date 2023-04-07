@@ -345,7 +345,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
 
   return (
     <>
-      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${isEmpty ? 'ring-4 ring-blue-500' : ''} ${ended ? 'opacity-0 transition-opacity duration-500 md:delay-300' : ''}`}>
+      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${isEmpty ? 'ring-4 ring-blue-500' : ''} ${ended ? 'opacity-0  duration-500 md:delay-700' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
