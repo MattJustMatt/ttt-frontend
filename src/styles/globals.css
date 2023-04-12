@@ -3,5 +3,82 @@
 @tailwind utilities;
 
 body {
-    @apply bg-slate-900;
+  background: linear-gradient(to right, #1c75b0, #5038a4);
+}
+
+/* Glow effect inspired by Kevin Powell / Aaron Iker (https://www.youtube.com/watch?v=fcnDBP3k3BE) */
+.glow-effect {
+  --glow-line-color: #fff;
+  --glow-line-thickness: 2px;
+  --glow-line-length: 20px;
+  --glow-blur-color: #fff;
+  --glow-blur-size: 5px;
+  --glow-offset: 0px;
+  --animation-speed: 30000ms;
+  /* do not change, used for calculations */
+  --container-offset: 100px;
+  position: relative;
+}
+
+.glow-container {
+  pointer-events: none;
+  position: absolute;
+  inset: calc(var(--container-offset) / -2);
+  width: calc(100% + var(--container-offset));
+  height: calc(100% + var(--container-offset));
+  opacity: 0;
+  /* outline: 3px solid blue; */
+}
+
+.glow-blur,
+.glow-line {
+  width: calc(100% - var(--container-offset) + var(--glow-offset));
+  height: calc(100% - var(--container-offset) + var(--glow-offset));
+  x: calc((var(--container-offset) / 2) + calc(var(--glow-offset) / -2));
+  y: calc((var(--container-offset) / 2) + calc(var(--glow-offset) / -2));
+  /* rx: 1.25rem; */
+  fill: transparent;
+  stroke: black;
+  stroke-width: 5px;
+  stroke-dasharray: var(--glow-line-length) calc(50px - var(--glow-line-length));
+}
+
+.glow-line,
+.glow-blur {
+  animation: dashoffset-animation var(--animation-speed) linear infinite;
+}
+
+@keyframes dashoffset-animation {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -350px;
+  }
+}
+
+.glow-line {
+  stroke: var(--glow-line-color);
+  stroke-width: var(--glow-line-thickness);
+}
+
+.glow-blur {
+  filter: blur(var(--glow-blur-size));
+  stroke: var(--glow-blur-color);
+  stroke-width: var(--glow-blur-size);
+}
+
+.glow-effect .glow-container {
+  opacity: 1;
+  transition-property: opacity, 1s;
+  animation: glow-visibility ease-in-out 500ms forwards;
+}
+
+@keyframes glow-visibility {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }

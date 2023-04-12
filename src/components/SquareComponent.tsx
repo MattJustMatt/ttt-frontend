@@ -1,39 +1,44 @@
-const Square: React.FC<SquareProps> = ({playerAtPosition, isWinning}) => {
+import { type MouseEvent, useState } from "react";
+import { getColorClassForPiece } from "~/lib/utils";
+import { type BoardPiece } from "~/types/GameTypes";
+
+const Square: React.FC<SquareProps> = ({nextPiece, pieceAtPosition, isWinning, playerInputAllowed, handleSquareClicked}) => {
   Square.displayName = "Square";
 
-  let playerAtPositionString = '';
+  const [hoverText, setHoverText] = useState<null | string>(null);
+
+  let pieceAtPositionString = ''; 
+  if (pieceAtPosition === 1) {
+    pieceAtPositionString = 'X';
+  } else if (pieceAtPosition === 2) {
+    pieceAtPositionString = 'O';
+  }
+
+  pieceAtPosition === 1 ? 'X' : 'O';
   let style = "flex flex-col justify-center border shadow-2xl";
+  const bgColor = getColorClassForPiece(pieceAtPosition, isWinning);
+  style = `${style} ${bgColor} ${ playerInputAllowed ? 'hover:bg-slate-300' : ''}`;
 
-  let bgColor = 'bg-slate-700';
-  switch (playerAtPosition) {
-    case 1: {
-      playerAtPositionString = "X";
-      if (isWinning) bgColor = "bg-orange-500";
-      if (!isWinning) bgColor = "bg-orange-200";
-
-      break;
-    }
-    case 2: {
-      playerAtPositionString = "O";
-      if (isWinning) bgColor = "bg-green-500";
-      if (!isWinning) bgColor = "bg-green-200";
-      
-      break;
+  const handleHover = (ev: MouseEvent) => {
+    //TODO: don't register if not interactive
+    if (playerInputAllowed && !pieceAtPosition) {
+      setHoverText(ev.type === 'mouseenter' ? nextPiece === 1 ? 'X' : 'O' : null);
     }
   }
 
-  style = style + " " + bgColor;
-
   return (
     <>
-      <div className={style}>{playerAtPositionString}</div>
+      <div onMouseEnter={handleHover} onMouseOut={handleHover} onClick={handleSquareClicked} className={style}>{pieceAtPositionString || hoverText}</div>
     </>
   );
 };
 
 type SquareProps = {
-  playerAtPosition: number;
+  nextPiece?: BoardPiece,
+  pieceAtPosition: BoardPiece;
   isWinning: boolean;
+  handleSquareClicked?: () => void;
+  playerInputAllowed?: boolean;
 };
 
 export default Square;

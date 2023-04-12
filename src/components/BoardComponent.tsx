@@ -6,14 +6,23 @@ const Board: React.FC<BoardProps> = ({ positions, ended, winningLine }) => {
 
   return (
     <>
-      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${isEmpty ? 'ring-4 ring-blue-500' : ''} ${ended ? 'opacity-0  duration-500 md:delay-700' : ''}`}>
-        {Array.from({ length: 9 }).map((_, index) => (
-          <Square
-            key={index}
-            isWinning={winningLine.includes(index)}
-            playerAtPosition={positions[index]}
-          />
-        ))}
+      <div className='glow-effect'>
+        <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${isEmpty ? 'ring-4 ring-blue-500' : ''} ${ended ? 'opacity-0  duration-500 md:delay-700' : ''}`}>
+          {Array.from({ length: 9 }).map((_, index) => (
+            <Square
+              key={index}
+              isWinning={winningLine?.includes(index)}
+              pieceAtPosition={positions[index]}
+            />
+          ))}
+
+          <svg className="glow-container">
+            <rect pathLength="100" className="glow-blur"></rect>
+            <rect pathLength="100" className="glow-line"></rect>
+          </svg>
+
+          
+        </div>
       </div>
     </>
   )
@@ -21,7 +30,7 @@ const Board: React.FC<BoardProps> = ({ positions, ended, winningLine }) => {
 
 type BoardProps = {
   positions: Array<number>;
-  winningLine: Array<number>;
+  winningLine?: Array<number>;
   ended: boolean;
 };
 

@@ -38,7 +38,7 @@ const Home: NextPage = () => {
   const handleGameCreated = (gameId: number) => {
     totalUpdatesRef.current = totalUpdatesRef.current + 1;
   
-    dispatchBoards({ type: 'create', gameId: gameId, maxBoards: maxBoardsRef.current });
+    dispatchBoards({ type: 'create', boardId: gameId, maxBoards: maxBoardsRef.current });
   };
 
   const handleGameUpdated = (gameId: number, position: number, newPlayer: number) => {
@@ -49,7 +49,7 @@ const Home: NextPage = () => {
       return;
     }
   
-    dispatchBoards({ type: 'update_square', gameId: gameId, position: position, newPlayer: newPlayer });
+    dispatchBoards({ type: 'update_square', boardId: gameId, position: position, newPlayer: newPlayer });
   };
 
   const handleGameEnded = (gameId: number, winner: number, winningLine: Array<number>) => {
@@ -81,7 +81,7 @@ const Home: NextPage = () => {
       return newStatistics;
     });
 
-    dispatchBoards({ type: 'end_game', gameId: gameId, winningLine: winningLine });
+    dispatchBoards({ type: 'end_game', boardId: gameId, winningLine: winningLine });
   }
 
   const handleViewers = (connections: number) => {
@@ -139,7 +139,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main style={{ overflow: 'hidden', maxHeight: '100vh' }}>
+      <main className="dark">
         {showStats && <Stats connectionStatus={connectionStatus} tps={tps} viewers={viewers} statistics={statistics} /> }
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5">

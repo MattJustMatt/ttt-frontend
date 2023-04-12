@@ -28,7 +28,7 @@ const AudioPlayer: React.FC<AudioPlayerComponentProps> = () => {
     }, [audioContextRef]);
 
     useEffect(() => {
-        console.log("Query!");
+        setMuted(router.query.muted === 'true')
     }, [router.query.muted]);
 
     const toggleMute = () => {
