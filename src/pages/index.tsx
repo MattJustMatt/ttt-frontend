@@ -81,7 +81,7 @@ const Home: NextPage = () => {
       return newStatistics;
     });
 
-    dispatchBoards({ type: 'end_game', boardId: gameId, winningLine: winningLine });
+    dispatchBoards({ type: 'end_board', boardId: gameId, winner: winner, winningLine: winningLine });
   }
 
   const handleViewers = (connections: number) => {

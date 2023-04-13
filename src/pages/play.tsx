@@ -13,7 +13,7 @@ import { getColorClassForPiece } from "~/lib/utils";
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
 const Play: NextPage = () => {
-    const nextPlayerRef = useRef<BoardPiece>(BoardPiece.X);
+    const nextPieceRef = useRef<BoardPiece>(BoardPiece.X);
     const usernameRef = useRef<HTMLInputElement>();
     const [playingFor, setPlayingFor] = useState<BoardPiece>(null);
     const [playerList, setPlayerList] = useState<Array<SanitizedPlayer>>([]);
@@ -28,13 +28,13 @@ const Play: NextPage = () => {
         socketRef.current = io(REMOTE_GAMEPLAY_URL);
 
         socketRef.current.on("connect", () => {
-            // Setup connected state
+            dispatchBoards({type: 'reset'});
         });
           
         socketRef.current.on('history', (gameHistory) => {
-            console.log(`history `, gameHistory);
+            const gameHistoryClone = gameHistory.slice();
 
-            setGames(gameHistory.slice(0, gameHistory.length));
+            setGames(gameHistoryClone);
             dispatchBoards({type: 'initialize', game: gameHistory[gameHistory.length-1]});
         });
 
@@ -54,18 +54,21 @@ const Play: NextPage = () => {
         socketRef.current.on('end', (gameId, boardId, winner, winningLine) => {
             console.log(`Received end for ${gameId} board id ${boardId}`);
             if (boardId !== null) {
-                dispatchBoards({ type: 'end_board', boardId: boardId, winner: winner, winningLine: winningLine});
-                return;
+              dispatchBoards({ type: 'end_board', boardId: boardId, winner: winner, winningLine: winningLine});
+              return;
             }
-
+          
             // If there was no boardId included, that means the full game is over (a winning line was found in the broader boards)!
-            const gamesClone = games.slice();
-            gamesClone[gamesClone.length-1].winner = winner;
-            gamesClone[gamesClone.length-1].winningLine = winningLine;
+            setGames((prevGames) => {
+              const gamesClone = prevGames.slice();
+              if (gamesClone[gamesClone.length - 1]) {
+                gamesClone[gamesClone.length - 1].winner = winner;
+                gamesClone[gamesClone.length - 1].winningLine = winningLine;
+              }
+              return gamesClone;
+            });
 
-            setGames(gamesClone)
-            setPlayerInputAllowed(false);
-        });
+          });
 
         return () => {
             socketRef.current.disconnect();
@@ -73,7 +76,6 @@ const Play: NextPage = () => {
     }, []);
 
     const handleUsernameSubmit = () => {
-        // Make sure current is not null before accessing its value
         const username = usernameRef.current?.value.trim();
         if (username && username !== "Enter a username...") {
             socketRef.current.emit('requestUsername', username);
@@ -90,8 +92,8 @@ const Play: NextPage = () => {
         if (currentBoard.winner) return;
         if (currentBoard.positions[squareId]) return;
 
-        socketRef.current.emit('clientUpdate', games.length-1, boardId, squareId, nextPlayerRef.current);
-        nextPlayerRef.current = 3 - nextPlayerRef.current as BoardPiece;
+        socketRef.current.emit('clientUpdate', games.length-1, boardId, squareId, nextPieceRef.current);
+        nextPieceRef.current = 3 - nextPieceRef.current;
 
         //setPlayerInputAllowed(false);
     };
@@ -102,13 +104,13 @@ const Play: NextPage = () => {
 
             </Head>
             <main>
-                {games[games.length-1]?.winner !== null && <Confetti width={2560} height={1080} />}
+                {games[games.length-1]?.winner !== null && <Confetti width={2000} height={1200} />}
 
                 <div className={`text-white flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full bg-opacity-10 bg-slate-200 text-md sm:text-lg md:text-2xl shadow-2xl  transition-colors duration-200`}>
                     <p>You&apos;re playing for team: <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
                 </div>
                 <br />
-                <div className="min-h-screen flex items-center justify-center text-slate-200">
+                <div className="min-h-auto m-10 flex items-center justify-center text-slate-200">
                     <div className="bg-opacity-10 bg-slate-200 m-5 p-5 ring-orange-500 ring-4">
                         <div className="p-3">
                             <h2 className="text-3xl mb-5 font-semibold">Players</h2>
@@ -116,6 +118,7 @@ const Play: NextPage = () => {
                                 return <h2 className="text-xl" key={index}><span className={`${player.id === playerId ? 'font-extrabold' : ''}`}>{player.username}</span> <span className={`${ getColorClassForPiece(player.playingFor, true)} bg-opacity-50 font-extrabold`}>({player.playingFor === BoardPiece.X ? 'X' : 'O'}s)</span>: {player.score} pts</h2>
                             })}
                         </div>
+
 
                         <div className="p-3">
                             <h2 className="text-2xl font-semibold mt-10 mb-3">Choose a name</h2>

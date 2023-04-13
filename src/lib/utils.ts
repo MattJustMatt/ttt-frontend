@@ -7,12 +7,15 @@ export const formatNumberWithCommas = (num: number) => {
 export const getColorClassForPiece = (piece: BoardPiece, isWinning: boolean): string => {
     switch (piece) {
         case BoardPiece.X: {
-          if (isWinning) return "bg-orange-500";
-          if (!isWinning) return "bg-orange-200";
+          if (isWinning) return "bg-orange-600";
+          if (!isWinning) return "bg-orange-300";
         }
         case BoardPiece.O: {
-          if (isWinning) return "bg-green-500";
-          if (!isWinning) return "bg-green-200";
+          if (isWinning) return "bg-green-600";
+          if (!isWinning) return "bg-green-300";
+        }
+        case BoardPiece.DRAW: {
+          return '';
         }
       }
 }

@@ -6,6 +6,26 @@ body {
   background: linear-gradient(to right, #1c75b0, #5038a4);
 }
 
+.color-fill {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%) scale(0);
+  border-radius: 50%;
+  animation: fillAnimation 750ms forwards;
+}
+
+@keyframes fillAnimation {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 /* Glow effect inspired by Kevin Powell / Aaron Iker (https://www.youtube.com/watch?v=fcnDBP3k3BE) */
 .glow-effect {
   --glow-line-color: #fff;
@@ -27,16 +47,20 @@ body {
   width: calc(100% + var(--container-offset));
   height: calc(100% + var(--container-offset));
   opacity: 0;
-  /* outline: 3px solid blue; */
+
+  --glow-container-width: 100%;
+  --glow-container-height: 100%;
+
 }
 
 .glow-blur,
 .glow-line {
-  width: calc(100% - var(--container-offset) + var(--glow-offset));
-  height: calc(100% - var(--container-offset) + var(--glow-offset));
+  width: calc(var(--glow-container-width) - var(--container-offset) + var(--glow-offset));
+  height: calc(var(--glow-container-height) - var(--container-offset) + var(--glow-offset));
+
   x: calc((var(--container-offset) / 2) + calc(var(--glow-offset) / -2));
   y: calc((var(--container-offset) / 2) + calc(var(--glow-offset) / -2));
-  /* rx: 1.25rem; */
+
   fill: transparent;
   stroke: black;
   stroke-width: 5px;

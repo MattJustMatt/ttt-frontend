@@ -12,7 +12,7 @@ const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, handleSqua
                 </div>
             }
 
-            <div className={`grid grid-rows-3 grid-cols-3 gap-3 ${ game.winner ? 'opacity-0 transition-opacity duration-1000 delay-500' : ''} `}>
+            <div className={`grid grid-rows-3 grid-cols-3 gap-3 ${ game.winner ? 'opacity-0 transition-opacity duration-1000 delay-1000' : ''} `}>
                 { Array.from(boards).map((board, i) =>
                     <InteractiveBoard 
                         key={i}
