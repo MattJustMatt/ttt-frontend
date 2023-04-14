@@ -21,7 +21,8 @@ export enum BoardPiece {
 
 export type SanitizedPlayer = {
   id: number;
-  username: string;
+  username: string | null;
   playingFor: BoardPiece;
   score: number;
+  online: boolean;
 }

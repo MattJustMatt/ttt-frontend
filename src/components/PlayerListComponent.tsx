@@ -6,7 +6,8 @@ const PlayerListComponent: React.FC<PlayerListProps> = ({ players, playerId, max
         if (player.username === null) player.username = "Anonymous";
 
         return player;
-    }).slice(0, maxDisplayedPlayers);
+    }).slice(0, maxDisplayedPlayers)
+    .sort((a, b) => Number(b.online) - Number(a.online));
 
     const xTotalScore = players.filter(player => player.playingFor === BoardPiece.X).reduce((score, player) => score + player.score, 0);
     const oTotalScore = players.filter(player => player.playingFor === BoardPiece.O).reduce((score, player) => score + player.score, 0);
@@ -29,7 +30,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = ({ players, playerId, max
                 <div className="p-3">
                     { formattedPlayers.map((player, index) => {
                         return <h2 className="text-md md:text-xl" key={index}>
-                            <span className={`${player.id === playerId ? 'font-extrabold' : ''}`}>{player.username}</span> <span className={`${ getColorClassForPiece(player.playingFor, true)} bg-opacity-50 font-extrabold`}>({player.playingFor === BoardPiece.X ? 'X' : 'O'}s)</span>: {formatNumberWithCommas(player.score)} pts</h2>
+                            <span className={`${player.online ? 'text-white' : 'text-slate-400'} ${player.id === playerId ? 'font-extrabold' : ''}`}>{player.username}</span> <span className={`${ getColorClassForPiece(player.playingFor, true)} bg-opacity-50 font-extrabold`}>({player.playingFor === BoardPiece.X ? 'X' : 'O'}s)</span>: {formatNumberWithCommas(player.score)} pts</h2>
                     })}
                 </div>
             </div>
