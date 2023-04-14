@@ -4,8 +4,10 @@ import { GoogleAnalytics } from "nextjs-google-analytics";
 import "~/styles/globals.css";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
-  <GoogleAnalytics trackPageViews />
-  return <Component {...pageProps} />;
+  return <>
+    <GoogleAnalytics trackPageViews />
+    <Component {...pageProps} />;
+  </> 
 };
 
 export default MyApp;
