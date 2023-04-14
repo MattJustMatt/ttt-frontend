@@ -4,12 +4,27 @@ import Square from './SquareComponent';
 
 const InteractiveBoard: React.FC<BoardProps> = ({ board, playingFor, handleSquareClicked, playerInputAllowed }) => {
   InteractiveBoard.displayName = "Board";
-  const ended = !!board.winner;
+  const ended = board.winner !== null;
+  let winnerString = '';
+  switch (board.winner) {
+    case BoardPiece.X: {
+      winnerString = 'X';
+      break;
+    }
+    case BoardPiece.O: {
+      winnerString = 'O';
+      break;
+    }
+    case BoardPiece.DRAW: {
+      winnerString = '-';
+      break;
+    }
+  }
 
   return (
     <>
-      <div className={`${!ended ? 'glow-effect' : `ring-4 ${ board.winner === 1 ? 'ring-orange-500' : 'ring-green-500'}`} relative`}>
-        {ended && <h2 className={`absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-extrabold text-white`}>{board.winner === BoardPiece.X ? 'X' : 'O'}</h2>
+      <div className={`${!ended ? 'glow-effect' : `ring-4 ${ board.winner === BoardPiece.X ? 'ring-orange-500' : board.winner === BoardPiece.O ? 'ring-green-500' : 'ring-gray-600'}`} relative`}>
+        {ended && <h2 className={`absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-extrabold text-white`}>{winnerString}</h2>
 }
         
         <div className={`${ended ? 'opacity-20 transition-opacity duration-300 delay-75' : ''}`}>
