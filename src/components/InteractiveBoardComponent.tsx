@@ -3,7 +3,7 @@ import { type BoardPiece, type Board } from '~/types/GameTypes';
 import Square from './SquareComponent';
 import { useEffect } from 'react';
 
-const InteractiveBoard: React.FC<BoardProps> = ({ board, nextPiece, handleSquareClicked, playerInputAllowed }) => {
+const InteractiveBoard: React.FC<BoardProps> = ({ board, playingFor, handleSquareClicked, playerInputAllowed }) => {
   InteractiveBoard.displayName = "Board";
   const ended = !!board.winner;
 
@@ -40,7 +40,7 @@ const InteractiveBoard: React.FC<BoardProps> = ({ board, nextPiece, handleSquare
             {Array.from({ length: 9 }).map((_, index) => (
               <Square
                 key={index}
-                nextPiece={nextPiece}
+                playingFor={playingFor}
                 isWinning={board.winningLine?.includes(index)}
                 pieceAtPosition={board.positions[index]}
                 handleSquareClicked={() => { handleSquareClicked(board.id, index) }}
@@ -62,7 +62,7 @@ const InteractiveBoard: React.FC<BoardProps> = ({ board, nextPiece, handleSquare
 
 type BoardProps = {
   board: Board,
-  nextPiece: BoardPiece,
+  playingFor: BoardPiece,
   handleSquareClicked?: (boardId: number, id: number) => void;
   playerInputAllowed?: boolean;
 };

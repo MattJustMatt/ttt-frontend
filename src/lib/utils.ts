@@ -8,14 +8,21 @@ export const getColorClassForPiece = (piece: BoardPiece, isWinning: boolean): st
     switch (piece) {
         case BoardPiece.X: {
           if (isWinning) return "bg-orange-600";
-          if (!isWinning) return "bg-orange-300";
+          if (!isWinning) return "bg-orange-400";
         }
         case BoardPiece.O: {
           if (isWinning) return "bg-green-600";
-          if (!isWinning) return "bg-green-300";
+          if (!isWinning) return "bg-green-400";
         }
         case BoardPiece.DRAW: {
           return '';
         }
       }
-}
+};
+
+export const getCurrentDimension = () => {
+  return {
+      width: window.innerWidth,
+      height: window.innerHeight
+  }
+};

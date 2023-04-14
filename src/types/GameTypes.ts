@@ -18,3 +18,10 @@ export enum BoardPiece {
   X,
   O
 }
+
+export type SanitizedPlayer = {
+  id: number;
+  username: string;
+  playingFor: BoardPiece;
+  score: number;
+}
