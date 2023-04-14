@@ -220,7 +220,7 @@ const Play: NextPage = () => {
                             <div className="flex flex-wrap justify-center items-center">
                                 <p>You&apos;re team: <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
                                 
-                                {playerInputAllowed && <span className="font-bold"> make a move!</span>}
+                                {playerInputAllowed && <span className="font-bold">&nbsp;make a move!</span>}
                                 
                                 {!playerInputAllowed && (
                                     <p className="whitespace-nowrap">&nbsp;but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn.</p>)}
