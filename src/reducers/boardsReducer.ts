@@ -1,4 +1,4 @@
-import { Game, type Board, type BoardPiece } from "~/types/GameTypes";
+import type { Game, Board, BoardPiece } from "~/types/GameTypes";
 
 // Keeps track of the current board index we're adding and wraps around to zero every time we hit "maxBoards"
 let keyCounter = 0;

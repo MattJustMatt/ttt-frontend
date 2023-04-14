@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { type Reducer, useEffect, useReducer, useRef, useState, useCallback } from "react";
+import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, useMemo } from "react";
 
 import Confetti from "react-confetti";
 
@@ -16,6 +16,7 @@ import PlayerListComponent from "~/components/PlayerListComponent";
 import NickInputComponent from "~/components/NickInputComponent";
 import LoaderComponent from "~/components/LoaderComponent";
 
+import useSound from 'use-sound';
 
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
@@ -49,12 +50,25 @@ const Play: NextPage = () => {
     const [connected, setConnected] = useState(false);
     const [connectError, setConnectError] = useState("");
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const [playClickOn] = useSound("click-on.mp3", { volume: 0.3});
+
     const playerInputAllowed = playingFor === nextPiece;
 
+    const memoizedBoards = useMemo(() => Array.from(boards.values()), [boards]);
+
     useEffect(() => {
-        socketRef.current = io(REMOTE_GAMEPLAY_URL, { transports: ["websocket"] });
+        const localUsername = localStorage.getItem("username");
+        const auth = !!localUsername ? { username: localUsername } : {};
+
+        socketRef.current = io(REMOTE_GAMEPLAY_URL, { 
+            transports: ["websocket"], auth
+        });
+
+        console.log(auth);
 
         socketRef.current.on("connect", () => {
+
             socketRef.current.sendBuffer = [];
             setConnected(true);
             setConnectError("");
@@ -90,7 +104,8 @@ const Play: NextPage = () => {
         });
 
         socketRef.current.on('update', (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => {
-            setNextPiece(updatedPiece === BoardPiece.X ? BoardPiece. O : BoardPiece.X);
+            const nextPiece = updatedPiece === BoardPiece.X ? BoardPiece. O : BoardPiece.X
+            setNextPiece(nextPiece);
 
             dispatchBoards({ type: 'update_square', boardId: boardId, position: squareId, newPlayer: updatedPiece});
         });
@@ -156,19 +171,30 @@ const Play: NextPage = () => {
                 return;
             }
 
+            localStorage.setItem('username', username);
             setHasUsername(true);
         });
     }, []);
 
     const handleSquareClicked = useCallback((boardId: number, squareId: number) => {
         if (!playerInputAllowed) return;
+        playClickOn();
 
         const currentBoard = boards.get(boardId);
         if (currentBoard.winner) return;
         if (currentBoard.positions[squareId]) return;
 
         socketRef.current.emit('clientUpdate', games.length-1, boardId, squareId, nextPiece);
-    }, [boards, games.length, nextPiece, playerInputAllowed]);
+    }, [boards, games.length, nextPiece, playerInputAllowed, playClickOn]);
+
+    const handleLogout = useCallback(() => {
+        localStorage.removeItem("username");
+        setHasUsername(false);
+    }, []);
+
+    const handleHowToPlay = useCallback(() => {
+        alert("no one really knows");
+    }, []);
 
     return (
         <>
@@ -186,25 +212,40 @@ const Play: NextPage = () => {
                     <NickInputComponent setUsername={handleSetUsername} />
                 </>
                 }
-                {connected && loadAnimationCompleted && <>
+                {connected && hasUsername && loadAnimationCompleted && <>
                     <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
                         {(games[games.length-1] && games[games.length-1].winner !== null) && <Confetti width={screenSize.width} height={screenSize.height} />}
 
-                        <div className={`text-white text-center flex flex-row justify-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'} transition-opacity duration-300 bg-slate-200 text-md sm:text-lg md:text-2xl shadow-2xl`}>
-                            <p>You&apos;re team: <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span>
-                            {playerInputAllowed && <span className="font-bold"> make a move!</span>}
-                            {!playerInputAllowed && <span> but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn. <span className="font-extrabold">Invite a friend to continue!</span></span>}
-                            </p>
+                        <div className={`text-white text-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'} transition-opacity duration-300 bg-slate-200 text-md sm:text-lg md:text-2xl shadow-2xl`}>
+                            <div className="flex flex-wrap justify-center items-center">
+                                <p>You&apos;re team: <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
+                                
+                                {playerInputAllowed && <span className="font-bold"> make a move!</span>}
+                                
+                                {!playerInputAllowed && (
+                                    <p className="whitespace-nowrap">&nbsp;but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn.</p>)}
+                                
+                                {!playerInputAllowed && (
+                                    <p className="font-extrabold whitespace-normal sm:whitespace-nowrap">&nbsp;Invite a friend to continue!</p>
+                                )}
+                            </div>
                         </div>
 
                         <div className="m-2 md:m-5 flex justify-center flex-col xl:flex-row">
                             <div className="flex-grow justify-center max-w-4xl xl:mr-5">
                                 { games.map((game, index) => {
-                                    return <MultiBoardComponent key={index} game={game} boards={Array.from(boards.values())} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
+                                    return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
                                 })}
                             </div>
 
-                            <PlayerListComponent players={playerList} playerId={playerId} maxDisplayedPlayers={100} />
+                            <div>
+                                <div className="flex justify-start mt-5 xl:mt-0 gap-3 xl:justify-around">
+                                    <button className={`bg-blue-500 hover:bg-blue-700'text-white font-bold py-2 px-4 rounded`} onClick={ handleHowToPlay }>How to Play</button>
+                                    <button className={`bg-blue-500 hover:bg-blue-700'text-white font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Username</button>
+                                </div>
+                                <PlayerListComponent players={playerList} playerId={playerId} maxDisplayedPlayers={100} />
+                            </div>
+                            
                         </div>
                     </div>
                     </>

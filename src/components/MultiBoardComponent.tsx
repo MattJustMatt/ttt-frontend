@@ -2,8 +2,34 @@
 import { getColorClassForPiece } from "~/lib/utils";
 import InteractiveBoard from "./InteractiveBoardComponent";
 import { BoardPiece, type Board, type Game } from "~/types/GameTypes";
+import { memo, useEffect } from "react";
 
-const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
+const MultiBoardComponent: React.FC<BoardSetProps> = memo(({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
+    MultiBoardComponent.displayName = "MultiBoardComponent";
+
+    useEffect(() => {
+        const glowContainers = document.querySelectorAll('.glow-container');
+      
+        const resizeObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const containerWidth = entry.contentRect.width;
+            const containerHeight = entry.contentRect.height;
+            const glowContainer = entry.target as HTMLElement;
+      
+            glowContainer.style.setProperty('--glow-container-width', `${containerWidth}px`);
+            glowContainer.style.setProperty('--glow-container-height', `${containerHeight}px`);
+          }
+        });
+      
+        glowContainers.forEach((glowContainer) => {
+          resizeObserver.observe(glowContainer);
+        });
+    
+        return () => {
+          resizeObserver.disconnect();
+        };
+      }, [boards]);
+
     return (
         <>
             { game.winner &&
@@ -12,10 +38,10 @@ const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor
                 </div>
             }
 
-            <div className={`grid grid-rows-3 grid-cols-3 gap-3 ${ game.winner ? 'opacity-0 transition-opacity duration-[7000ms] delay-[3000ms]' : ''} `}>
-                { Array.from(boards).map((board, i) =>
+            <div className={`grid grid-rows-3 grid-cols-3 gap-3 shadow-md ${ game.winner ? 'opacity-0 transition-opacity duration-[7000ms] delay-[3000ms]' : ''} `}>
+                { Array.from(boards).map((board) =>
                     <InteractiveBoard 
-                        key={i}
+                        key={board.id}
                         board={board}
                         playingFor={playingFor}
                         handleSquareClicked={handleSquareClicked}
@@ -25,7 +51,7 @@ const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor
             </div>
         </>
     )
-};
+});
 
 type BoardSetProps = {
     game: Game;
