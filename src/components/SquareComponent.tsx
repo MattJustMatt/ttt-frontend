@@ -3,8 +3,6 @@ import { getColorClassForPiece } from "~/lib/utils";
 import { BoardPiece } from "~/types/GameTypes";
 
 const Square: React.FC<SquareProps> = ({playingFor, pieceAtPosition, isWinning, playerInputAllowed, handleSquareClicked}) => {
-  Square.displayName = "Square";
-
   const [hoverText, setHoverText] = useState<null | string>(null);
 
   let pieceString = ''; 

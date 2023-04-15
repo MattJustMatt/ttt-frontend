@@ -2,8 +2,6 @@ import { memo } from 'react';
 import Square from './SquareComponent';
 
 const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => {
-  Board.displayName = "Board";
-
   return (
     <>
       <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0  duration-500 md:delay-700' : ''}`}>
@@ -18,6 +16,7 @@ const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => 
     </>
   );
 });
+Board.displayName = "Board";
 
 type BoardProps = {
   positions: Array<number>;

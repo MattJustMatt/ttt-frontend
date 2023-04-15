@@ -52,7 +52,8 @@ const Play: NextPage = () => {
 
   const [playClickOn] = useSound("click-on.mp3", { volume: 0.3});
 
-  const playerInputAllowed = games[games.length-1]?.winner !== null || (playingFor === nextPiece);
+  let playerInputAllowed = playingFor === nextPiece;
+  if (games[games.length-1]?.winner !== null) playerInputAllowed = false;
 
   const memoizedBoards = useMemo(() => Array.from(boards.values()), [boards]);
 
@@ -106,7 +107,7 @@ const Play: NextPage = () => {
       dispatchBoards({ type: 'update_square', boardId: boardId, position: squareId, newPlayer: updatedPiece});
     });
 
-    socketRef.current.on('end', (gameId, boardId, winner, winningLine) => {
+    socketRef.current.on('end', (gameId, boardId, winner, winningLine, winnerUsername) => {
       if (boardId !== null) {
         dispatchBoards({ type: 'end_board', boardId: boardId, winner: winner, winningLine: winningLine});
         return;
@@ -116,10 +117,9 @@ const Play: NextPage = () => {
       
       setGames((prevGames) => {
         const gamesClone = prevGames.slice();
-        if (gamesClone[gamesClone.length - 1]) {
-          gamesClone[gamesClone.length - 1].winner = winner;
-          gamesClone[gamesClone.length - 1].winningLine = winningLine;
-        }
+        gamesClone[gamesClone.length - 1].winner = winner;
+        gamesClone[gamesClone.length - 1].winningLine = winningLine;
+        gamesClone[gamesClone.length - 1].winnerUsername = winnerUsername;
 
         return gamesClone;
       });
@@ -254,11 +254,11 @@ const Play: NextPage = () => {
 }
 
 interface ServerToClientEvents {
-    playerInformation: (id: number, username: string | null, playingFor: BoardPiece) => void;
-    history: (gameHistory: Array<Game>) => void;
-    playerList: (playerList: Array<SanitizedPlayer>) => void;
-    update: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
-    end: (gameId: number, boardId: number | null, winner: BoardPiece, winningLine: Array<BoardPiece>) => void;
+  playerInformation: (id: number, username: string | null, playingFor: BoardPiece) => void;
+  history: (gameHistory: Array<Game>) => void;
+  playerList: (playerList: Array<SanitizedPlayer>) => void;
+  update: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
+  end: (gameId: number, boardId: number | null, winner: BoardPiece, winningLine: Array<number> | null, winnerUsername: string) => void;
 }
 
 interface ClientToServerEvents {

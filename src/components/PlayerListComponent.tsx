@@ -3,8 +3,6 @@ import { formatNumberWithCommas, getColorClassForPiece } from "~/lib/utils";
 import { BoardPiece, type SanitizedPlayer } from "~/types/GameTypes";
 
 const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId, maxDisplayedPlayers }) => {
-  PlayerListComponent.displayName = "PlayerListComponent";
-
   const formattedPlayers = players.slice(0, maxDisplayedPlayers).sort((a, b) => Number(b.online) - Number(a.online));
 
   const xTotalScore = players.filter(player => player.playingFor === BoardPiece.X).reduce((score, player) => score + player.score, 0);
@@ -35,6 +33,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
     </>
   );
 });
+PlayerListComponent.displayName = "PlayerListComponent";
 
 type PlayerListProps = {
   players: Array<SanitizedPlayer>;

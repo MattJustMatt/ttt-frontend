@@ -11,6 +11,7 @@ export type Game = {
   winner: BoardPiece | null;
   winningLine: Array<number> | null;
   nextPiece: BoardPiece;
+  winnerUsername: string | null;
 };
 
 export enum BoardPiece {

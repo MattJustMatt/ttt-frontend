@@ -2,10 +2,12 @@
 import { getColorClassForPiece } from "~/lib/utils";
 import InteractiveBoard from "./InteractiveBoardComponent";
 import { BoardPiece, type Board, type Game } from "~/types/GameTypes";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const NEXT_GAME_DELAY = 15;
 
 const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
-  MultiBoardComponent.displayName = "MultiBoardComponent";
+  const [nextGameCountdown, setNextGameCountdown] = useState(NEXT_GAME_DELAY);
 
   useEffect(() => {
     const glowContainers = document.querySelectorAll('.glow-container');
@@ -30,11 +32,28 @@ const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor
     };
   }, [boards]);
 
+  useEffect(() => {
+    const countdownTimer = setInterval(() => {
+      setNextGameCountdown((prevCountdown) => {
+        if (prevCountdown === 1) clearInterval(countdownTimer);
+
+        return prevCountdown-1;
+      });
+    }, 1000);
+
+    return () => {
+      setNextGameCountdown(NEXT_GAME_DELAY);
+      clearInterval(countdownTimer);
+    }
+  }, [game.winner]);
+
   return (
     <>
       { game.winner !== null &&
-        <div className={`m-10 p-10 shadow-2xl ${getColorClassForPiece(game.winner, true)}`}>
-          <h2 className="text-slate-200 text-5xl font-semibold text-center">{ game.winner === BoardPiece.X ? 'X' : 'O'} WINS!</h2>
+        <div className={`m-10 p-10 text-slate-200 shadow-2xl font-semibold text-center ${getColorClassForPiece(game.winner, true)}`}>
+          <h2 className="text-5xl">{ game.winner === BoardPiece.X ? 'X' : 'O'} WINS!</h2>
+          <h3 className="text-3xl mt-2">The winning move was made by <span className="font-extrabold">{game.winnerUsername}</span></h3>
+          <p>The next game will start in {nextGameCountdown}s</p>
         </div>
       }
 
