@@ -1,13 +1,11 @@
+import { memo } from "react";
 import { formatNumberWithCommas, getColorClassForPiece } from "~/lib/utils";
 import { BoardPiece, type SanitizedPlayer } from "~/types/GameTypes";
 
-const PlayerListComponent: React.FC<PlayerListProps> = ({ players, playerId, maxDisplayedPlayers }) => {
-  const formattedPlayers = players.map((player) => {
-    if (player.username === null) player.username = "Anonymous";
+const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId, maxDisplayedPlayers }) => {
+  PlayerListComponent.displayName = "PlayerListComponent";
 
-    return player;
-  }).slice(0, maxDisplayedPlayers)
-  .sort((a, b) => Number(b.online) - Number(a.online));
+  const formattedPlayers = players.slice(0, maxDisplayedPlayers).sort((a, b) => Number(b.online) - Number(a.online));
 
   const xTotalScore = players.filter(player => player.playingFor === BoardPiece.X).reduce((score, player) => score + player.score, 0);
   const oTotalScore = players.filter(player => player.playingFor === BoardPiece.O).reduce((score, player) => score + player.score, 0);
@@ -36,7 +34,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = ({ players, playerId, max
       </div>
     </>
   );
-}
+});
 
 type PlayerListProps = {
   players: Array<SanitizedPlayer>;

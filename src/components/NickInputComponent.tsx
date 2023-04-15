@@ -1,6 +1,10 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { type RealtimeResponse } from "~/types/SocketTypes";
 
+import Image from 'next/image';
+
+import logo from 'public/ttt-transparent.png';
+
 const DEFAULT_TEXT = 'Enter a nickname...';
 
 const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) => {
@@ -54,18 +58,22 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
 
   return (
     <>
-      <div className="flex flex-col items-center align-middle p-5">
-        <h2 className="text-2xl font-semibold mt-10 mb-3">Choose a nickname</h2>
+      <div className="flex flex-col items-center align-middle py-10">
+        <div className="flex mb-2">
+          <h2 className="text-2xl font-semibold mt-10 mr-2">Choose a Nickname</h2>
+          <Image src={logo} alt="Tic Tac Yo Logo" className="square" width={100}/>
+        </div>
+
         <form onSubmit={handleUsernameSubmit}>
           <input
-            className={`bg-slate-800 ring-1 ${ valid ? 'ring-blue-500' : 'ring-red-500'} mr-2 p-2`}
+            className={`bg-slate-800 ring-1 ${ valid ? 'ring-blue-500' : 'ring-red-500'} mr-4 p-2`}
             defaultValue={DEFAULT_TEXT}
             ref={usernameRef}
             autoFocus
             onFocus={(e) => { if (e.target.value === DEFAULT_TEXT) e.target.value = ""}}
             onBlur={(e) => { 
-                if (e.target.value.trim() === '')  e.target.value = DEFAULT_TEXT;
-                validateUsername(true);
+              if (e.target.value.trim() === '')  e.target.value = DEFAULT_TEXT;
+              validateUsername(true);
             }} />
           <button className={`${valid ? 'bg-blue-500' : 'bg-gray-600'} ${valid ? 'hover:bg-blue-700' : ''} text-white font-bold py-2 px-4 rounded`} type="submit">Play</button>
         </form>

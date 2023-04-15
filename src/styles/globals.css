@@ -6,7 +6,7 @@ body {
   position: relative;
   margin: 0;
   height: 100vh;
-  background: linear-gradient(to right, #1c75b0, #5038a4);
+  background: linear-gradient(to right, #218ed7, #5c2aae);
 }
 
 body::before {

@@ -58,10 +58,11 @@ const Play: NextPage = () => {
 
   useEffect(() => {
     const localUsername = localStorage.getItem("username");
-    const auth = !!localUsername ? { username: localUsername } : {};
+    setHasUsername(!!localUsername); // This will be reset later if the server rejects the localStorage username
+    const authMessage = !!localUsername ? { username: localUsername } : {};
 
     socketRef.current = io(REMOTE_GAMEPLAY_URL, { 
-      transports: ["websocket"], auth
+      transports: ["websocket"], auth: authMessage
     });
 
     socketRef.current.on("connect", () => {
@@ -69,8 +70,6 @@ const Play: NextPage = () => {
       
       setConnected(true);
       setConnectError("");
-
-      dispatchBoards({type: 'reset'});
     });
 
     socketRef.current.on('disconnect', () => {
@@ -215,7 +214,7 @@ const Play: NextPage = () => {
         }
         {connected && hasUsername && loadAnimationCompleted && <>
           <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
-              {(games[games.length-1] && games[games.length-1].winner !== null) && <Confetti width={screenSize.width} height={screenSize.height} />}
+              {(games[games.length-1] && games[games.length-1].winner !== null) && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
 
               <div className={`text-white text-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'} transition-opacity duration-300 bg-slate-200 text-md sm:text-lg md:text-2xl shadow-2xl`}>
                 <div className="flex flex-wrap justify-center items-center">
@@ -266,6 +265,5 @@ interface ClientToServerEvents {
     clientUpdate: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
     requestUsername: (username: string) => void;
 }
-
 
 export default Play;
