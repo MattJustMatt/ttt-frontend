@@ -131,6 +131,7 @@ const Play: NextPage = () => {
             setScreenSize(getCurrentDimension())
         }
 
+        updateDimension();
         window.addEventListener('resize', updateDimension);
         return () => {
             socketRef.current.disconnect();
@@ -163,7 +164,7 @@ const Play: NextPage = () => {
         }
     }, [loadAnimationCompleted]);
 
-    const handleSetUsername = useCallback((username: string, callback: (RealtimeResponse) => void) => {
+    const handleSetUsername = useCallback((username: string, callback: (response: RealtimeResponse) => void) => {
         socketRef.current.emit('requestUsername', username, (response: RealtimeResponse) => {
             if (response.code !== 200) {
                 callback(response);

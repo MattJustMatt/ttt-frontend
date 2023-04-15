@@ -22,7 +22,7 @@ export const getColorClassForPiece = (piece: BoardPiece, isWinning: boolean): st
 
 export const getCurrentDimension = () => {
   return {
-      width: document.documentElement.clientWidth,
-      height: document.documentElement.clientHeight
+      width: window.innerWidth,
+      height: window.innerHeight
   }
 };
