@@ -4,7 +4,7 @@ import InteractiveBoard from "./InteractiveBoardComponent";
 import { BoardPiece, type Board, type Game } from "~/types/GameTypes";
 import { memo, useEffect } from "react";
 
-const MultiBoardComponent: React.FC<BoardSetProps> = memo(({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
+const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
     MultiBoardComponent.displayName = "MultiBoardComponent";
 
     useEffect(() => {
@@ -30,9 +30,11 @@ const MultiBoardComponent: React.FC<BoardSetProps> = memo(({ game, boards, playi
         };
       }, [boards]);
 
+
+    console.log("winner ", game.winner);
     return (
         <>
-            { game.winner &&
+            { game.winner !== null &&
                 <div className={`m-10 p-10 shadow-2xl ${getColorClassForPiece(game.winner, true)}`}>
                     <h2 className="text-slate-200 text-5xl font-semibold text-center">{ game.winner === BoardPiece.X ? 'X' : 'O'} WINS!</h2>
                 </div>
@@ -42,6 +44,7 @@ const MultiBoardComponent: React.FC<BoardSetProps> = memo(({ game, boards, playi
                 { Array.from(boards).map((board) =>
                     <InteractiveBoard 
                         key={board.id}
+                        game={game}
                         board={board}
                         playingFor={playingFor}
                         handleSquareClicked={handleSquareClicked}
@@ -51,7 +54,7 @@ const MultiBoardComponent: React.FC<BoardSetProps> = memo(({ game, boards, playi
             </div>
         </>
     )
-});
+};
 
 type BoardSetProps = {
     game: Game;

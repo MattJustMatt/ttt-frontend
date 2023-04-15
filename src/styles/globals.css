@@ -47,6 +47,19 @@ body.signed-in::before {
   }
 }
 
+@keyframes ping {
+  25% {
+      transform: scale(1.3);
+      opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.animate-ping-once {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
 /* Glow effect inspired by Kevin Powell / Aaron Iker (https://www.youtube.com/watch?v=fcnDBP3k3BE) */
 .glow-effect {
   --glow-line-color: #ffffff;

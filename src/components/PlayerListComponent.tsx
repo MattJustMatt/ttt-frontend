@@ -35,7 +35,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = ({ players, playerId, max
                 </div>
             </div>
         </>
-    )
+    );
 }
 
 type PlayerListProps = {

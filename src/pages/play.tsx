@@ -50,10 +50,9 @@ const Play: NextPage = () => {
     const [connected, setConnected] = useState(false);
     const [connectError, setConnectError] = useState("");
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const [playClickOn] = useSound("click-on.mp3", { volume: 0.3});
 
-    const playerInputAllowed = playingFor === nextPiece;
+    const playerInputAllowed = games[games.length-1]?.winner !== null || (playingFor === nextPiece);
 
     const memoizedBoards = useMemo(() => Array.from(boards.values()), [boards]);
 
@@ -64,8 +63,6 @@ const Play: NextPage = () => {
         socketRef.current = io(REMOTE_GAMEPLAY_URL, { 
             transports: ["websocket"], auth
         });
-
-        console.log(auth);
 
         socketRef.current.on("connect", () => {
 
@@ -117,12 +114,14 @@ const Play: NextPage = () => {
             }
           
             // If there was no boardId included, that means the full game is over (a winning line was found in the broader boards)!
+            
             setGames((prevGames) => {
               const gamesClone = prevGames.slice();
               if (gamesClone[gamesClone.length - 1]) {
                 gamesClone[gamesClone.length - 1].winner = winner;
                 gamesClone[gamesClone.length - 1].winningLine = winningLine;
               }
+
               return gamesClone;
             });
 
@@ -147,7 +146,7 @@ const Play: NextPage = () => {
 
             setTimeout(() => {
                 setLoadAnimationCompleted(true);
-            }, 750);
+            }, 400);
 
             return;
         }
@@ -245,7 +244,6 @@ const Play: NextPage = () => {
                                 </div>
                                 <PlayerListComponent players={playerList} playerId={playerId} maxDisplayedPlayers={100} />
                             </div>
-                            
                         </div>
                     </div>
                     </>
