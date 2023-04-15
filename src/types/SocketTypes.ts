@@ -1,4 +1,4 @@
 export type RealtimeResponse = {
-    code: number;
-    message: string;
+  code: number;
+  message: string;
 }

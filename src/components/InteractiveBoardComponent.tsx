@@ -53,8 +53,7 @@ const InteractiveBoard: React.FC<BoardProps> = ({ game, board, playingFor, handl
   return (
     <>
       <div className={`${playPingAnimation ? 'animate-ping-once' : ''} ${!ended && !isPartOfWinningGameLine ? 'glow-effect' : `${isPartOfWinningGameLine ? 'ring-8' : 'ring-4'} ${ board.winner === BoardPiece.X ? 'ring-orange-500' : board.winner === BoardPiece.O ? 'ring-green-500' : 'ring-gray-600'}`} relative`}>
-        {ended && <h2 className={`absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-extrabold text-white`}>{winnerString}</h2>
-}
+        {ended && <h2 className={`absolute z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl font-extrabold text-white`}>{winnerString}</h2>}
         
         <div className={`${ended ? 'opacity-20 transition-opacity duration-300 delay-75' : ''}`}>
           <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square`}>
