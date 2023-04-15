@@ -199,7 +199,7 @@ const Play: NextPage = () => {
     return (
         <>
             <Head>
-                <title>Tic Tac YOOO</title>
+                <title>Tic Tac YOOO - Beta</title>
                 <meta name="description" content="Experience Tic Tac Toe like never before. 3x3x3 Multiplayer Tic Tac Toe" />
                 <meta name="keywords" content="Tic Tac Toe, multiplayer, realtime, online, game, viewing experience" />
                 <link rel="icon" href="/favicon.ico" />
