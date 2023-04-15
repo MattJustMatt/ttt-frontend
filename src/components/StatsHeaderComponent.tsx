@@ -1,5 +1,4 @@
 import { formatNumberWithCommas } from "~/lib/utils";
-import AudioPlayer from '~/components/AudioPlayerComponent';
 
 const Stats: React.FC<StatsProps> = ({connectionStatus, tps, viewers, statistics}) => {
   return (

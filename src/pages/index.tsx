@@ -60,19 +60,16 @@ const Home: NextPage = () => {
 
       switch (winner) {
         case 0: {
-          //if (!muted) playTone(110, 0.01);
           newStatistics.ties = prevStatistics.ties + 1;
           break;
         }
 
         case 1: {
-          //if (!muted) playTone(440, 0.01);
           newStatistics.xWins = prevStatistics.xWins + 1;
           break;
         }
 
         case 2: {
-          //if (!muted) playTone(587, 0.01);
           newStatistics.oWins = prevStatistics.oWins + 1;
           break;
         }

@@ -20,12 +20,10 @@ const Board: React.FC<BoardProps> = ({ positions, ended, winningLine }) => {
             <rect pathLength="100" className="glow-blur"></rect>
             <rect pathLength="100" className="glow-line"></rect>
           </svg>
-
-          
         </div>
       </div>
     </>
-  )
+  );
 };
 
 type BoardProps = {
