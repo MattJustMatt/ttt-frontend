@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, useMemo } from "react";
+import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, useMemo, KeyboardEvent } from "react";
 
 import Confetti from "react-confetti";
 
@@ -16,7 +16,7 @@ import NickInputComponent from "~/components/NickInputComponent";
 import LoaderComponent from "~/components/LoaderComponent";
 import EmoteDrawerComponent from "~/components/EmoteDrawerComponent";
 
-import { getCurrentDimension } from "~/lib/utils";
+import { fadeElement, getCurrentDimension } from "~/lib/utils";
 
 import useSound from 'use-sound';
 
@@ -54,6 +54,9 @@ const Play: NextPage = () => {
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents>>();
   const [connected, setConnected] = useState(false);
   const [connectError, setConnectError] = useState("");
+
+  const keyPressesRef = useRef<Array<string>>([]);
+  const [showKonami, setShowKonami] = useState(false);
 
   const [playClickOn] = useSound("click-on.mp3", { volume: 0.3});
 
@@ -142,42 +145,63 @@ const Play: NextPage = () => {
     }
   }, []);
 
+  // Konami code changes background :D
+  useEffect(() => {
+    const keyDownListener = (ev: globalThis.KeyboardEvent) => {
+      const keyPresses = keyPressesRef.current
+      if (keyPresses.length > 3) keyPresses.shift();
+      keyPresses.push(ev.key)
+      keyPressesRef.current = keyPresses;
+
+      const word = keyPresses.join("");
+      if (word === "suit") {
+        setShowKonami(true);
+      }
+    };
+
+    document.addEventListener('keydown', keyDownListener);
+
+    return () => {
+      document.removeEventListener('keydown', keyDownListener);
+    }
+  }, []);
+
+  useEffect(() => {
+    let konamiTimer: unknown;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const konamiBG = document.querySelector('.background-overlay') as HTMLElement;
+
+    if (showKonami) {
+      fadeElement(konamiBG, 400, 0, 1);
+
+      konamiTimer = setTimeout(() => {
+        setShowKonami(false);
+      }, 3000);
+    } else {
+      fadeElement(konamiBG, 400, 1, 0);
+    }
+
+    return () => {
+      if (konamiTimer) clearTimeout(konamiTimer as number);
+    }
+  }, [showKonami]);
+
   // Sign in animation
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const bgOverlay = document.querySelector('.background-overlay') as HTMLElement;
-
-    const fade = (element: HTMLElement, duration: number, startOpacity: number, endOpacity: number) => {
-      const start = performance.now();
-
-      const tick = (now: number) => {
-        element.style.opacity = (
-          startOpacity + (endOpacity - startOpacity) * ((now - start) / duration)
-        ).toString();
-
-        if (now - start < duration) {
-          requestAnimationFrame(tick);
-        } else {
-          element.style.opacity = endOpacity.toString();
-        }
-      };
-
-      requestAnimationFrame(tick);
-    };
+    const brightBG = document.querySelector('.background-overlay') as HTMLElement;
 
     if (hasUsername) {
-      fade(bgOverlay, 1000, 1, 0);
+      fadeElement(brightBG, 1000, 1, 0);
 
       setTimeout(() => {
         setLoadAnimationCompleted(true);
       }, 400);
-
-      return;
+    } else {
+      setLoadAnimationCompleted(false)
+      setUIOpacity(0);
+      fadeElement(brightBG, 750, 0, 1);
     }
-
-    setLoadAnimationCompleted(false)
-    setUIOpacity(0);
-    fade(bgOverlay, 750, 0, 1);
   }, [hasUsername]);
 
   // Board loading animation
@@ -247,7 +271,7 @@ const Play: NextPage = () => {
       </Head>
     
       <main className="text-slate-200">
-        <div className="background-overlay"></div>
+        <div className="background-overlay konami-overlay"></div>
         {!connected && 
           <LoaderComponent connectError={connectError} />
         }       

@@ -27,3 +27,21 @@ export const getCurrentDimension = () => {
     height: document.documentElement.clientHeight
   }
 };
+
+export const fadeElement = (element: HTMLElement, duration: number, startOpacity: number, endOpacity: number) => {
+  const start = performance.now();
+
+  const tick = (now: number) => {
+    element.style.opacity = (
+      startOpacity + (endOpacity - startOpacity) * ((now - start) / duration)
+    ).toString();
+
+    if (now - start < duration) {
+      requestAnimationFrame(tick);
+    } else {
+      element.style.opacity = endOpacity.toString();
+    }
+  };
+
+  requestAnimationFrame(tick);
+};
