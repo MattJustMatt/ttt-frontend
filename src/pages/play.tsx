@@ -169,16 +169,21 @@ const Play: NextPage = () => {
   useEffect(() => {
     let konamiTimer: unknown;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const konamiBG = document.querySelector('.background-overlay') as HTMLElement;
+    const konamiBG = document.querySelector('.konami-overlay') as HTMLElement;
 
     if (showKonami) {
+      konamiBG.style.display = 'block';
       fadeElement(konamiBG, 400, 0, 1);
 
       konamiTimer = setTimeout(() => {
         setShowKonami(false);
-      }, 3000);
+      }, 5000);
     } else {
-      fadeElement(konamiBG, 400, 1, 0);
+      const fadeOutDelay = 400;
+      fadeElement(konamiBG, fadeOutDelay, 1, 0);
+      konamiTimer = setTimeout(() => {
+        konamiBG.style.display = 'none';
+      }, fadeOutDelay);
     }
 
     return () => {
