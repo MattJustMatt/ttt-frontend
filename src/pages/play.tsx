@@ -5,20 +5,22 @@ import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, use
 import Confetti from "react-confetti";
 
 import { type Socket, io} from 'socket.io-client';
+import type { RealtimeResponse, ServerToClientEvents, ClientToServerEvents } from "~/types/SocketTypes";
 
 import { BoardPiece, type Board, type Game, type SanitizedPlayer, type Emote } from "~/types/GameTypes";
-import { type RealtimeResponse } from "~/types/SocketTypes";
 
 import boardsReducer, { type BoardAction } from "~/reducers/boardsReducer";
 import MultiBoardComponent from "~/components/MultiBoardComponent";
-import { getCurrentDimension } from "~/lib/utils";
 import PlayerListComponent from "~/components/PlayerListComponent";
 import NickInputComponent from "~/components/NickInputComponent";
 import LoaderComponent from "~/components/LoaderComponent";
-
-import useSound from 'use-sound';
 import EmoteDrawerComponent from "~/components/EmoteDrawerComponent";
 
+import { getCurrentDimension } from "~/lib/utils";
+
+import useSound from 'use-sound';
+
+import emoteList from '~/lib/emoteList';
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
 type EmitCallback = (response: RealtimeResponse) => void;
@@ -93,11 +95,11 @@ const Play: NextPage = () => {
       dispatchBoards({type: 'initialize', game: gameHistory[gameHistory.length-1]});
     });
 
-    socketRef.current.on('playerInformation', (playerId, username, playingFor, allowedToSendEmote) => {
+    socketRef.current.on('playerInformation', (playerId, username, playingFor, serverAllowedToSendEmote) => {
       setPlayerId(playerId);
       setHasUsername(!!username);
       setPlayingFor(playingFor);
-      setAllowedToSendEmote(allowedToSendEmote);
+      setAllowedToSendEmote(!allowedToSendEmote ? false : serverAllowedToSendEmote);
     });
 
     socketRef.current.on('playerList', (playerList) => {
@@ -205,6 +207,7 @@ const Play: NextPage = () => {
   const sendEmote = useCallback((emote: Emote) => {
     if (allowedToSendEmote) {
       setShowEmoteDrawer(false);
+      setAllowedToSendEmote(false);
       socketRef.current.emit('emote', emote.slug);
     }
   }, [allowedToSendEmote]);
@@ -269,31 +272,6 @@ const Play: NextPage = () => {
       </main>
     </>
   )  
-}
-
-const emoteList: Array<Emote> = [
-  { slug: "cat", name: "Pouty Cat", pathName: "pout-cat.png"},
-  { slug: "bunny", name: "Hurry Up Bunny", pathName: "bunny.png"},
-  { slug: "chicken", name: "Thumbs Up Chicken", pathName: "chicken.png"},
-  { slug: "koda", name: "Koda, Hi!", pathName: "dog.png"},
-  { slug: "ostrich", name: "Angry Ostrich", pathName: "ostrich.png"},
-  { slug: "parrot", name: "Copy Parrot", pathName: "parrot.png"},
-]
-
-
-export interface ServerToClientEvents {
-  playerInformation: (id: number, username: string | null, playingFor: BoardPiece, allowedToSendEmote: boolean) => void;
-  history: (gameHistory: Array<Game>) => void;
-  playerList: (playerList: Array<SanitizedPlayer>) => void;
-  update: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
-  end: (gameId: number, boardId: number | null, winner: BoardPiece, winningLine: Array<number> | null, winnerUsername: string) => void;
-  emote: (username: string, emoteSlug: string) => void;
-}
-
-export interface ClientToServerEvents {
-  clientUpdate: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
-  requestUsername: (username: string) => void;
-  emote: (emoteSlug: string) => void;
 }
 
 export default Play;

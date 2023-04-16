@@ -4,7 +4,7 @@ import { BoardPiece, type Emote, type SanitizedPlayer } from "~/types/GameTypes"
 
 import Image from 'next/image';
 import { type Socket } from "socket.io-client";
-import type { ClientToServerEvents, ServerToClientEvents } from "~/pages/play";
+import type { ClientToServerEvents, ServerToClientEvents } from "~/types/SocketTypes";
 
 const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId, maxDisplayedPlayers, emoteList, socketRef }) => {
   const [emoteMap, setEmoteMap] = useState<Map<string, Emote>>(new Map());
