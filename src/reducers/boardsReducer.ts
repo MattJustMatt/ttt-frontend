@@ -4,7 +4,6 @@ import type { Game, Board, BoardPiece } from "~/types/GameTypes";
 let keyCounter = 0;
 
 function boardsReducer(boards: Map<number, Board>, action: BoardAction) {
-  console.log(action)
   switch(action.type) {
     case 'initialize': {
       const newBoards = new Map();

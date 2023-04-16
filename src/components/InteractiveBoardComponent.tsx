@@ -1,7 +1,7 @@
 
 import { BoardPiece, type Board, type Game } from '~/types/GameTypes';
 import Square from './SquareComponent';
-import { memo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const InteractiveBoard: React.FC<BoardProps> = (({ game, board, playingFor, handleSquareClicked, playerInputAllowed }) => {
   const [playPingAnimation, setPlayPingAnimation] = useState(false);
@@ -77,7 +77,6 @@ const InteractiveBoard: React.FC<BoardProps> = (({ game, board, playingFor, hand
     </>
   )
 });
-InteractiveBoard.displayName = "Board";
 
 type BoardProps = {
   game: Game,

@@ -128,7 +128,6 @@ const Home: NextPage = () => {
                 <div className="flex items-center justify-between p-5 border-b rounded-t dark:border-gray-600">
                   <h3 className="text-2xl font-bold  text-gray-900 dark:text-white">
                       Stop Watching... Start Playing
-                      
                   </h3>
                   <Image className="hover:animate-bounce rounded-lg w-16 sm:w-20" src={logo} alt="Tic Tac Yo Logo" width={75}/>
                 </div>

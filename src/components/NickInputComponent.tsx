@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState, ChangeEvent } from "react";
 import { type RealtimeResponse } from "~/types/SocketTypes";
 
 import Image from 'next/image';
@@ -8,7 +8,7 @@ import logo from 'public/ttt-transparent.png';
 const DEFAULT_TEXT = 'Enter a nickname...';
 
 const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) => {
-  const usernameRef = useRef<HTMLInputElement>();
+  const usernameRef = useRef<string>();
   const [valid, setValid] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
 
@@ -17,7 +17,7 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
   // The reason showValidation and setValid exist separately is because we don't want to show an error message when they first 
   // start typing (< 3 chars) but we do for all other cases. Could refactor this to be cleaner.
   const validateUsername = (fromFocus: boolean) => {
-    const usernameInputValue = usernameRef.current.value;
+    const usernameInputValue = usernameRef.current;
 
     if (usernameInputValue !== DEFAULT_TEXT) {
       if (usernameInputValue.length >= 16) {
@@ -35,15 +35,11 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
     }
   }
 
-  useEffect(() => {
-    validateUsername(false);
-  }, [usernameRef.current?.value]);
-
   const handleUsernameSubmit = (ev: FormEvent) => {
     ev.preventDefault();
     if (!valid) return;
 
-    const username = usernameRef.current.value.trim();
+    const username = usernameRef.current.trim();
     
     if (username && username !== DEFAULT_TEXT) {
       setUsername(username, (res: RealtimeResponse) => {
@@ -54,6 +50,11 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
         }
       });
     }
+  }
+
+  const usernameInputChanged = (ev: ChangeEvent<HTMLInputElement>) => {
+    usernameRef.current = ev.target.value;
+    validateUsername(false);
   }
 
   return (
@@ -68,8 +69,8 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
           <input
             className={`bg-slate-800 ring-1 ${ valid ? 'ring-blue-500' : 'ring-red-500'} mr-4 p-2`}
             defaultValue={DEFAULT_TEXT}
-            ref={usernameRef}
             autoFocus
+            onChange={usernameInputChanged}
             onFocus={(e) => { if (e.target.value === DEFAULT_TEXT) e.target.value = ""}}
             onBlur={(e) => { 
               if (e.target.value.trim() === '')  e.target.value = DEFAULT_TEXT;
@@ -81,7 +82,7 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
         { showValidation && <h2 className="text-red-500 font-2xl">{validationMessage}</h2>}
       </div>
     </>
-  )
+  );
 }
 
 type NickInputComponentProps = {
