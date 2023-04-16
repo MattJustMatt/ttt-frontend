@@ -95,11 +95,10 @@ const Play: NextPage = () => {
       dispatchBoards({type: 'initialize', game: gameHistory[gameHistory.length-1]});
     });
 
-    socketRef.current.on('playerInformation', (playerId, username, playingFor, serverAllowedToSendEmote) => {
+    socketRef.current.on('playerInformation', (playerId, username, playingFor) => {
       setPlayerId(playerId);
       setHasUsername(!!username);
       setPlayingFor(playingFor);
-      setAllowedToSendEmote(!allowedToSendEmote ? false : serverAllowedToSendEmote);
     });
 
     socketRef.current.on('playerList', (playerList) => {
@@ -208,6 +207,9 @@ const Play: NextPage = () => {
     if (allowedToSendEmote) {
       setShowEmoteDrawer(false);
       setAllowedToSendEmote(false);
+      setTimeout(() => {
+        setAllowedToSendEmote(true);
+      }, 4000);
       socketRef.current.emit('emote', emote.slug);
     }
   }, [allowedToSendEmote]);
@@ -260,7 +262,7 @@ const Play: NextPage = () => {
                       <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Username</button>
                     </div>
 
-                    <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Send Emote</button>
+                    <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Emotes</button>
                   </div>
                   
                   {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={sendEmote} allowedToSendEmote={allowedToSendEmote}/>}

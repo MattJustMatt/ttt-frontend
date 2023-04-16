@@ -85,8 +85,6 @@ const Home: NextPage = () => {
     window.addEventListener('resize', handleResize);
     handleResize();
 
-
-
     return () => {
       window.removeEventListener('resize', handleResize);
       realtimeSocketRef.current.disconnect();
@@ -122,7 +120,6 @@ const Home: NextPage = () => {
 
         {showModal && 
           <div className="fixed inset-0 z-50 flex items-center justify-center w-full h-full max-w-screen max-h-screen p-4 overflow-x-hidden overflow-y-auto">
-
             <div className="relative w-auto max-w-lg max-h-full">
               <div className="relative bg-white rounded-lg shadow overflow-auto dark:bg-gray-700">
                 <div className="flex items-center justify-between p-5 border-b rounded-t dark:border-gray-600">
@@ -148,8 +145,7 @@ const Home: NextPage = () => {
                 </div>
               </div>
             </div>
-          </div>
-        }
+          </div>}
       </main>
     </>
   );

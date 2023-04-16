@@ -11,12 +11,12 @@ const EmoteDrawerComponent: React.FC<EmoteDrawerProps> = ({ emoteList, sendEmote
             <div
               key={emote.name}
               className={`aspect-square max-h-20 bg-opacity-10 shadow-md bg-slate-200 hover:bg-opacity-40`}
-              style={{
+              style={allowedToSendEmote ? {
                 animationName: 'flicker',
                 animationDuration: '0.1s',
                 animationIterationCount: 1,
                 animationDelay: `${animationDelay}ms`,
-              }}
+              } : {}}
             >
               <button disabled={!allowedToSendEmote} onClick={() => sendEmote(emote)}>
                 <Image
