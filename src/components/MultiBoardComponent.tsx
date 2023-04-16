@@ -57,7 +57,7 @@ const MultiBoardComponent: React.FC<MultiBoardProps> = ({ game, boards, playingF
         </div>
       }
 
-      <div className={`grid grid-rows-3 grid-cols-3 gap-3 shadow-md ${ game.winner ? 'opacity-0 transition-opacity duration-[7000ms] delay-[3000ms]' : ''} `}>
+      <div className={`grid grid-rows-3 grid-cols-3 gap-3 shadow-md ${ game.winner ? `opacity-0 transition-opacity duration-[${(NEXT_GAME_DELAY * 1000) / 2}ms] delay-[${(NEXT_GAME_DELAY * 1000) / 2}ms]` : ''} `}>
         { Array.from(boards).map((board) =>
           <InteractiveBoard 
             key={board.id}

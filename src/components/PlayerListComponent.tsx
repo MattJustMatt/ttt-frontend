@@ -7,16 +7,16 @@ import { type Socket } from "socket.io-client";
 import type { ClientToServerEvents, ServerToClientEvents } from "~/types/SocketTypes";
 
 const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId, maxDisplayedPlayers, emoteList, socketRef }) => {
-  const [emoteMap, setEmoteMap] = useState<Map<string, Emote>>(new Map());
+  const [emoteMap, setEmoteMap] = useState<Map<number, Emote>>(new Map());
 
   const formattedPlayers = players.slice(0, maxDisplayedPlayers).sort((a, b) => Number(b.online) - Number(a.online));
 
   const xTotalScore = players.filter(player => player.playingFor === BoardPiece.X).reduce((score, player) => score + player.score, 0);
   const oTotalScore = players.filter(player => player.playingFor === BoardPiece.O).reduce((score, player) => score + player.score, 0);
 
-  const processEmote = useCallback((username: string, emoteSlug: string) => {
+  const processEmote = useCallback((playerId: number, emoteSlug: string) => {
     setEmoteMap((prevEmoteMap) => {
-      return new Map(prevEmoteMap).set(username, emoteList.find((emote) => emote.slug === emoteSlug));
+      return new Map(prevEmoteMap).set(playerId, emoteList.find((emote) => emote.slug === emoteSlug));
     });
 
     // Clear the emote from the map after the animation is done (4s)
@@ -24,8 +24,8 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
     setTimeout(() => {
       setEmoteMap((prevEmoteMap) => {
         const newEmoteMap = new Map(prevEmoteMap);
-        newEmoteMap.delete(username);
-        formattedPlayers.find((player) => player.username === username).currentEmoteSlug = null;
+        newEmoteMap.delete(playerId);
+        formattedPlayers.find((player) => player.id === playerId).currentEmoteSlug = null;
 
         return newEmoteMap;
       });
@@ -42,8 +42,8 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
     }
   }, [processEmote, socketRef]);
 
-  Array.from(emoteMap.keys()).forEach((usernameEmoted) => {
-    formattedPlayers.find((player) => player.username === usernameEmoted).currentEmoteSlug = emoteMap.get(usernameEmoted).slug;
+  Array.from(emoteMap.keys()).forEach((playerIdEmoted) => {
+    formattedPlayers.find((player) => player.id === playerIdEmoted).currentEmoteSlug = emoteMap.get(playerIdEmoted).slug;
   });
 
   return (

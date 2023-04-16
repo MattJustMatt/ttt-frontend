@@ -144,8 +144,29 @@ const Play: NextPage = () => {
 
   // Sign in animation
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    const bgOverlay = document.querySelector('.background-overlay') as HTMLElement;
+
+    const fade = (element: HTMLElement, duration: number, startOpacity: number, endOpacity: number) => {
+      const start = performance.now();
+
+      const tick = (now: number) => {
+        element.style.opacity = (
+          startOpacity + (endOpacity - startOpacity) * ((now - start) / duration)
+        ).toString();
+
+        if (now - start < duration) {
+          requestAnimationFrame(tick);
+        } else {
+          element.style.opacity = endOpacity.toString();
+        }
+      };
+
+      requestAnimationFrame(tick);
+    };
+
     if (hasUsername) {
-      document.body.classList.add("signed-in");
+      fade(bgOverlay, 1000, 1, 0);
 
       setTimeout(() => {
         setLoadAnimationCompleted(true);
@@ -153,9 +174,11 @@ const Play: NextPage = () => {
 
       return;
     }
-    
-    document.body.classList.remove('signed-in');
-  }, [ hasUsername ]);
+
+    setLoadAnimationCompleted(false)
+    setUIOpacity(0);
+    fade(bgOverlay, 750, 0, 1);
+  }, [hasUsername]);
 
   // Board loading animation
   useEffect(() => {
@@ -224,6 +247,7 @@ const Play: NextPage = () => {
       </Head>
     
       <main className="text-slate-200">
+        <div className="background-overlay"></div>
         {!connected && 
           <LoaderComponent connectError={connectError} />
         }       
@@ -259,7 +283,7 @@ const Play: NextPage = () => {
                   <div className="flex justify-start mt-5 xl:mt-0 gap-3 xl:justify-around xl:flex-col">
                     <div className="flex-grow">
                       <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded xl:mr-7`} onClick={ handleHowToPlay }>How to Play</button>
-                      <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Username</button>
+                      <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Nickname</button>
                     </div>
 
                     <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Emotes</button>

@@ -18,6 +18,7 @@ const NickInputComponent: React.FC<NickInputProps> = ({ setUsername }) => {
   // start typing (< 3 chars) but we do for all other cases. Could refactor this to be cleaner.
   const validateUsername = (fromFocus: boolean) => {
     const usernameInputValue = usernameRef.current;
+    if (!usernameInputValue) return;
 
     if (usernameInputValue !== DEFAULT_TEXT) {
       if (usernameInputValue.length >= 16) {
