@@ -15,6 +15,7 @@ export const getColorClassForPiece = (piece: BoardPiece, isWinning: boolean): st
       if (!isWinning) return "bg-green-400";
     }
     case BoardPiece.DRAW: {
+      if (isWinning) return 'bg-gray-500';
       return '';
     }
   }

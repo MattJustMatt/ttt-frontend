@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useRef, useState, ChangeEvent } from "react";
+import { type FormEvent, useRef, useState, type ChangeEvent } from "react";
 import { type RealtimeResponse } from "~/types/SocketTypes";
 
 import Image from 'next/image';
@@ -7,7 +7,7 @@ import logo from 'public/ttt-transparent.png';
 
 const DEFAULT_TEXT = 'Enter a nickname...';
 
-const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) => {
+const NickInputComponent: React.FC<NickInputProps> = ({ setUsername }) => {
   const usernameRef = useRef<string>();
   const [valid, setValid] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
@@ -85,7 +85,7 @@ const NickInputComponent: React.FC<NickInputComponentProps> = ({ setUsername }) 
   );
 }
 
-type NickInputComponentProps = {
+type NickInputProps = {
   setUsername: (username: string, callback: (response: RealtimeResponse) => void) => void;
 };
 

@@ -14,16 +14,23 @@ export type Game = {
   winnerUsername: string | null;
 };
 
-export enum BoardPiece {
-  DRAW,
-  X,
-  O
-}
-
 export type SanitizedPlayer = {
   id: number;
   username: string | null;
   playingFor: BoardPiece;
   score: number;
   online: boolean;
+  currentEmoteSlug: string | null;
+};
+
+export type Emote = {
+  slug: string,
+  name: string;
+  pathName: string;
+};
+
+export enum BoardPiece {
+  DRAW,
+  X,
+  O
 }

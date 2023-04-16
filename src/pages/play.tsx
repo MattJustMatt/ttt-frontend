@@ -6,7 +6,7 @@ import Confetti from "react-confetti";
 
 import { type Socket, io} from 'socket.io-client';
 
-import { BoardPiece, type Board, type Game, type SanitizedPlayer } from "~/types/GameTypes";
+import { BoardPiece, type Board, type Game, type SanitizedPlayer, type Emote } from "~/types/GameTypes";
 import { type RealtimeResponse } from "~/types/SocketTypes";
 
 import boardsReducer, { type BoardAction } from "~/reducers/boardsReducer";
@@ -17,6 +17,7 @@ import NickInputComponent from "~/components/NickInputComponent";
 import LoaderComponent from "~/components/LoaderComponent";
 
 import useSound from 'use-sound';
+import EmoteDrawerComponent from "~/components/EmoteDrawerComponent";
 
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
@@ -38,6 +39,8 @@ const Play: NextPage = () => {
   const [boards, dispatchBoards] = useReducer<Reducer<Map<number, Board>, BoardAction>>(boardsReducer, new Map());
 
   const [playerList, setPlayerList] = useState<Array<SanitizedPlayer>>([]);
+  const [showEmoteDrawer, setShowEmoteDrawer] = useState(false);
+  const [allowedToSendEmote, setAllowedToSendEmote] = useState(true);
   const [hasUsername, setHasUsername] = useState(false);
 
   const [loadAnimationCompleted, setLoadAnimationCompleted] = useState(false);
@@ -90,10 +93,11 @@ const Play: NextPage = () => {
       dispatchBoards({type: 'initialize', game: gameHistory[gameHistory.length-1]});
     });
 
-    socketRef.current.on('playerInformation', (playerId, username, playingFor) => {
+    socketRef.current.on('playerInformation', (playerId, username, playingFor, allowedToSendEmote) => {
       setPlayerId(playerId);
       setHasUsername(!!username);
       setPlayingFor(playingFor);
+      setAllowedToSendEmote(allowedToSendEmote);
     });
 
     socketRef.current.on('playerList', (playerList) => {
@@ -114,7 +118,6 @@ const Play: NextPage = () => {
       }
     
       // If there was no boardId included, that means the full game is over (a winning line was found in the broader boards)!
-      
       setGames((prevGames) => {
         const gamesClone = prevGames.slice();
         gamesClone[gamesClone.length - 1].winner = winner;
@@ -195,6 +198,17 @@ const Play: NextPage = () => {
     alert("no one really knows");
   }, []);
 
+  const handleShowEmoteDrawerClicked = useCallback(() => {
+    setShowEmoteDrawer(!showEmoteDrawer);
+  }, [showEmoteDrawer]);
+
+  const sendEmote = useCallback((emote: Emote) => {
+    if (allowedToSendEmote) {
+      setShowEmoteDrawer(false);
+      socketRef.current.emit('emote', emote.slug);
+    }
+  }, [allowedToSendEmote]);
+
   return (
     <>
       <Head>
@@ -206,11 +220,10 @@ const Play: NextPage = () => {
     
       <main className="text-slate-200">
         {!connected && 
-            <LoaderComponent connectError={connectError} />
+          <LoaderComponent connectError={connectError} />
         }       
-        {connected && !hasUsername && <>
-            <NickInputComponent setUsername={handleSetUsername} />
-        </>
+        {connected && !hasUsername &&
+          <NickInputComponent setUsername={handleSetUsername} />
         }
         {connected && hasUsername && loadAnimationCompleted && <>
           <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
@@ -222,28 +235,33 @@ const Play: NextPage = () => {
                   
                   {playerInputAllowed && <span className="font-bold">&nbsp;make a move!</span>}
                   
-                  {!playerInputAllowed && (
-                    <p className="whitespace-nowrap">&nbsp;but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn.</p>)}
+                  {!playerInputAllowed && (<>
+                    <p className="whitespace-nowrap">&nbsp;but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn.</p>
                   
-                  {!playerInputAllowed && (
                     <p className="font-extrabold whitespace-normal sm:whitespace-nowrap">&nbsp;Invite a friend to continue!</p>
-                  )}
+                  </>)}
                 </div>
               </div>
 
               <div className="m-2 md:m-5 flex justify-center flex-col xl:flex-row">
                 <div className="flex-grow justify-center max-w-4xl xl:mr-5">
                   { games.map((game, index) => {
-                      return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
+                    return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
                   })}
                 </div>
 
-                <div>
-                  <div className="flex justify-start mt-5 xl:mt-0 gap-3 xl:justify-around">
-                    <button className={`bg-blue-500 hover:bg-blue-700'text-white font-bold py-2 px-4 rounded`} onClick={ handleHowToPlay }>How to Play</button>
-                    <button className={`bg-blue-500 hover:bg-blue-700'text-white font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Username</button>
+                <div className="max-w-4xl xl:max-w-xs grow">
+                  <div className="flex justify-start mt-5 xl:mt-0 gap-3 xl:justify-around xl:flex-col">
+                    <div className="flex-grow">
+                      <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded xl:mr-7`} onClick={ handleHowToPlay }>How to Play</button>
+                      <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Username</button>
+                    </div>
+
+                    <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Send Emote</button>
                   </div>
-                  <PlayerListComponent players={playerList} playerId={playerId} maxDisplayedPlayers={100} />
+                  
+                  {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={sendEmote} allowedToSendEmote={allowedToSendEmote}/>}
+                  <PlayerListComponent players={playerList} emoteList={emoteList} playerId={playerId} maxDisplayedPlayers={100} socketRef={socketRef}/>
                 </div>
               </div>
             </div></>
@@ -253,17 +271,29 @@ const Play: NextPage = () => {
   )  
 }
 
-interface ServerToClientEvents {
-  playerInformation: (id: number, username: string | null, playingFor: BoardPiece) => void;
+const emoteList: Array<Emote> = [
+  { slug: "cat", name: "Pouty Cat", pathName: "pout-cat.png"},
+  { slug: "bunny", name: "Hurry Up Bunny", pathName: "bunny.png"},
+  { slug: "chicken", name: "Thumbs Up Chicken", pathName: "chicken.png"},
+  { slug: "koda", name: "Koda, Hi!", pathName: "dog.png"},
+  { slug: "ostrich", name: "Angry Ostrich", pathName: "ostrich.png"},
+  { slug: "parrot", name: "Copy Parrot", pathName: "parrot.png"},
+]
+
+
+export interface ServerToClientEvents {
+  playerInformation: (id: number, username: string | null, playingFor: BoardPiece, allowedToSendEmote: boolean) => void;
   history: (gameHistory: Array<Game>) => void;
   playerList: (playerList: Array<SanitizedPlayer>) => void;
   update: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
   end: (gameId: number, boardId: number | null, winner: BoardPiece, winningLine: Array<number> | null, winnerUsername: string) => void;
+  emote: (username: string, emoteSlug: string) => void;
 }
 
-interface ClientToServerEvents {
-    clientUpdate: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
-    requestUsername: (username: string) => void;
+export interface ClientToServerEvents {
+  clientUpdate: (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => void;
+  requestUsername: (username: string) => void;
+  emote: (emoteSlug: string) => void;
 }
 
 export default Play;

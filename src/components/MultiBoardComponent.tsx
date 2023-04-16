@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 const NEXT_GAME_DELAY = 15;
 
-const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
+const MultiBoardComponent: React.FC<MultiBoardProps> = ({ game, boards, playingFor, playerInputAllowed, handleSquareClicked }) => {
   const [nextGameCountdown, setNextGameCountdown] = useState(NEXT_GAME_DELAY);
 
   useEffect(() => {
@@ -51,8 +51,8 @@ const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor
     <>
       { game.winner !== null &&
         <div className={`m-10 p-10 text-slate-200 shadow-2xl font-semibold text-center ${getColorClassForPiece(game.winner, true)}`}>
-          <h2 className="text-5xl">{ game.winner === BoardPiece.X ? 'X' : 'O'} WINS!</h2>
-          <h3 className="text-3xl mt-2">The winning move was made by <span className="font-extrabold">{game.winnerUsername}</span></h3>
+          <h2 className="text-5xl">{ game.winner === BoardPiece.DRAW ? 'NOBODY' : game.winner === BoardPiece.X ? 'X' : 'O'} WINS!</h2>
+          <h3 className="text-3xl mt-2">The {game.winner === BoardPiece.DRAW ? 'last' : 'winning'} move was made by <span className="font-extrabold">{game.winnerUsername}</span></h3>
           <p>The next game will start in {nextGameCountdown}s</p>
         </div>
       }
@@ -73,7 +73,7 @@ const MultiBoardComponent: React.FC<BoardSetProps> = ({ game, boards, playingFor
   );
 };
 
-type BoardSetProps = {
+type MultiBoardProps = {
   game: Game;
   playingFor: BoardPiece;
   boards: Array<Board>;

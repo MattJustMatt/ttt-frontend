@@ -3,7 +3,7 @@ import { BoardPiece, type Board, type Game } from '~/types/GameTypes';
 import Square from './SquareComponent';
 import { useEffect, useState } from 'react';
 
-const InteractiveBoard: React.FC<BoardProps> = (({ game, board, playingFor, handleSquareClicked, playerInputAllowed }) => {
+const InteractiveBoard: React.FC<InteractiveBoardProps> = (({ game, board, playingFor, handleSquareClicked, playerInputAllowed }) => {
   const [playPingAnimation, setPlayPingAnimation] = useState(false);
 
   const ended = board.winner !== null;
@@ -78,7 +78,7 @@ const InteractiveBoard: React.FC<BoardProps> = (({ game, board, playingFor, hand
   )
 });
 
-type BoardProps = {
+type InteractiveBoardProps = {
   game: Game,
   board: Board,
   playingFor: BoardPiece,
