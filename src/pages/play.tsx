@@ -21,7 +21,6 @@ import { fadeElement, getCurrentDimension } from "~/lib/utils";
 import useSound from 'use-sound';
 
 import emoteList from '~/lib/emoteList';
-import KonamiBGComponent from "~/components/KonamiBGComponent";
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
 type EmitCallback = (response: RealtimeResponse) => void;
@@ -154,7 +153,7 @@ const Play: NextPage = () => {
       setTimeout(() => {
         setLoadAnimationCompleted(true);
       }, 400);
-    } else {
+    } else if (uiOpacity !== 0) {
       setLoadAnimationCompleted(false)
       setUIOpacity(0);
       fadeElement(brightBG, 750, 0, 1);
@@ -242,14 +241,14 @@ const Play: NextPage = () => {
 
               <div className={`text-white text-center p-1 nd:p-0 space-x-1 transition-all duration-200 bg-slate-200 text-lg md:text-2xl shadow-2xl ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'}`}>
                 <div className="flex flex-wrap justify-center items-center">
-                  <p>You&apos;re team <span className={`font-bold ${playingFor === BoardPiece.X ? 'text-orange-400' : 'text-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
+                  <p>You&apos;re team <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
                   
                   {playerInputAllowed && <span className="font-bold">&nbsp;make a move!</span>}
                   
                   {!playerInputAllowed && (<>
                     <p className="whitespace-nowrap">&nbsp;but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn.</p>
                   
-                    <p className="font-extrabold whitespace-normal sm:whitespace-nowrap">&nbsp;Invite a friend to continue!</p>
+                    <p className="font-extrabold">&nbsp;Invite a friend to continue!</p>
                   </>)}
                 </div>
               </div>

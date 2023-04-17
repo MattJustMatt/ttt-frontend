@@ -9,54 +9,44 @@ const DEFAULT_TEXT = 'Enter a nickname...';
 
 const NickInputComponent: React.FC<NickInputProps> = ({ setUsername }) => {
   const usernameRef = useRef<string>();
-  const [valid, setValid] = useState(true);
-  const [validationMessage, setValidationMessage] = useState("");
-
-  const [showValidation, setShowValidation] = useState(false);
+  const [validation, setValidation] = useState({ valid: false, message: "", showMessage: false});
   
   // The reason showValidation and setValid exist separately is because we don't want to show an error message when they first 
   // start typing (< 3 chars) but we do for all other cases. Could refactor this to be cleaner.
   const validateUsername = (fromFocus: boolean) => {
     const usernameInputValue = usernameRef.current;
-    if (!usernameInputValue) return;
+    if (usernameInputValue === undefined) return;
 
-    if (usernameInputValue !== DEFAULT_TEXT) {
-      if (usernameInputValue.length >= 16) {
-        setValid(false);
-        setValidationMessage("Nicknames must be less than 16 characters long");
-        setShowValidation(true);
-      } else if (usernameInputValue.length <= 2) {
-        setValid(false);
-        setValidationMessage("Nicknames must be at least 3 characters long");
-        setShowValidation(fromFocus);
-      } else {
-        setValid(true);
-        setShowValidation(false);
-      }
+    if (usernameInputValue.length >= 16) {
+      setValidation({ valid: false, message: "Nicknames must be less than 16 characters long", showMessage: true })
+      return false;
+    } else if (usernameInputValue.length <= 2) {
+      setValidation({ valid: false, message: "Nicknames be at least 3 characters long", showMessage: fromFocus })
+      return false;
+    } else {
+      setValidation({ valid: true, message: "", showMessage: false })
+      return true;
     }
-  }
+  };
 
   const handleUsernameSubmit = (ev: FormEvent) => {
     ev.preventDefault();
-    if (!valid) return;
+    if (!validateUsername(true)) return;
 
     const username = usernameRef.current.trim();
-    
     if (username && username !== DEFAULT_TEXT) {
       setUsername(username, (res: RealtimeResponse) => {
         if (res.code !== 200) {
-          setValid(false);
-          setShowValidation(true);
-          setValidationMessage(res.message);
+          setValidation({ valid: false, message: res.message, showMessage: true })
         }
       });
     }
-  }
+  };
 
   const usernameInputChanged = (ev: ChangeEvent<HTMLInputElement>) => {
     usernameRef.current = ev.target.value;
     validateUsername(false);
-  }
+  };
 
   return (
     <>
@@ -68,19 +58,19 @@ const NickInputComponent: React.FC<NickInputProps> = ({ setUsername }) => {
 
         <form onSubmit={handleUsernameSubmit}>
           <input
-            className={`bg-slate-800 ring-1 ${ valid ? 'ring-blue-500' : 'ring-red-500'} mr-4 p-2`}
+            className={`bg-slate-800 ring-1 ${ validation.valid ? 'ring-blue-500' : 'ring-red-500'} mr-4 p-2`}
             defaultValue={DEFAULT_TEXT}
             autoFocus
             onChange={usernameInputChanged}
             onFocus={(e) => { if (e.target.value === DEFAULT_TEXT) e.target.value = ""}}
             onBlur={(e) => { 
-              if (e.target.value.trim() === '')  e.target.value = DEFAULT_TEXT;
               validateUsername(true);
+              if (e.target.value.trim() === '') e.target.value = DEFAULT_TEXT;
             }} />
-          <button className={`${valid ? 'bg-blue-500' : 'bg-gray-600'} ${valid ? 'hover:bg-blue-700' : ''} text-white font-bold py-2 px-4 rounded`} type="submit">Play</button>
+          <button className={`${validation.valid ? 'bg-blue-500' : 'bg-gray-600'} ${validation.valid ? 'hover:bg-blue-700' : ''} text-white font-bold py-2 px-4 rounded`} type="submit">Play</button>
         </form>
 
-        { showValidation && <h2 className="text-red-500 font-2xl">{validationMessage}</h2>}
+        { validation.showMessage && <h2 className="text-red-500 mt-2 font-2xl">{validation.message}</h2>}
       </div>
     </>
   );
