@@ -112,7 +112,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        <div className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5 filter ${showModal ? 'blur-sm' : ''}`}>
+        <div className={`grid grid-cols-3 text-slate-200 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-4 m-5 filter ${showModal ? 'blur-sm' : ''}`}>
           { Array.from(boards.values()).map((board: Board) => {
             return <BoardComponent key={board.id} positions={board.positions} ended={board.winner !== null} winningLine={board.winningLine} />
           }) }
