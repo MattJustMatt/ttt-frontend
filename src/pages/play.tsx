@@ -228,8 +228,7 @@ const Play: NextPage = () => {
       </Head>
     
       <main className="text-slate-200">
-        <div className="background-overlay konami-overlay"></div>
-        <KonamiBGComponent triggerWord="suit" bgQuery=".konami-overlay"/>
+        <div className="background-overlay"></div>
 
         {!connected && 
           <LoaderComponent connectError={connectError} />
@@ -241,9 +240,9 @@ const Play: NextPage = () => {
           <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
               {(games[games.length-1] && games[games.length-1].winner !== null) && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
 
-              <div className={`text-white text-center p-2 sm:p-0 space-x-1 sm:space-x-5 align-middle min-h-full ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'} transition-opacity duration-300 bg-slate-200 text-md sm:text-lg md:text-2xl shadow-2xl`}>
+              <div className={`text-white text-center p-1 nd:p-0 space-x-1 transition-all duration-200 bg-slate-200 text-lg md:text-2xl shadow-2xl ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'}`}>
                 <div className="flex flex-wrap justify-center items-center">
-                  <p>You&apos;re team: <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
+                  <p>You&apos;re team <span className={`font-bold ${playingFor === BoardPiece.X ? 'text-orange-400' : 'text-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
                   
                   {playerInputAllowed && <span className="font-bold">&nbsp;make a move!</span>}
                   
@@ -255,25 +254,23 @@ const Play: NextPage = () => {
                 </div>
               </div>
 
-              <div className="m-2 md:m-5 flex justify-center flex-col xl:flex-row">
-                <div className="flex-grow justify-center max-w-4xl xl:mr-5">
+              <div className="m-2 md:m-5 flex flex-col lg:flex-row justify-center">
+                <div className="aspect-square max-w-screen max-h-screen min-w-[95vw] lg:min-w-0 lg:min-h-[75vh] lg:max-w-[75vw] lg:mr-5">
                   { games.map((game, index) => {
                     return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
                   })}
                 </div>
 
-                <div className="max-w-4xl xl:max-w-xs grow">
-                  <div className="flex justify-start mt-5 xl:mt-0 gap-3 xl:justify-around xl:flex-col">
-                    <div className="flex-grow">
-                      <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded xl:mr-7`} onClick={ handleHowToPlay }>How to Play</button>
-                      <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Nickname</button>
-                    </div>
+                <div className="mt-5 min-w-full lg:mt-0 lg:min-w-0 lg:max-w-xs">
+                  <div className="flex gap-3">
+                    <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleHowToPlay }>How to Play</button>
+                    <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Nickname</button>
 
                     <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Emotes</button>
                   </div>
                   
                   {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={sendEmote} allowedToSendEmote={allowedToSendEmote}/>}
-                  <PlayerListComponent players={playerList} emoteList={emoteList} playerId={playerId} maxDisplayedPlayers={100} socketRef={socketRef}/>
+                  <PlayerListComponent players={playerList} emoteList={emoteList} playerId={playerId} maxDisplayedPlayers={38} socketRef={socketRef}/>
                 </div>
               </div>
             </div></>
