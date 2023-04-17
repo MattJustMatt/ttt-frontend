@@ -10,12 +10,12 @@ const Square: React.FC<SquareProps> = ({playingFor, pieceAtPosition, isWinning, 
   if (pieceAtPosition === BoardPiece.O) pieceString = 'O';
 
   const pieceBackground = getColorClassForPiece(pieceAtPosition, isWinning);
-  const bgColor = `${pieceBackground ? pieceBackground + ' square-color-fill' : ''} bg-gradient-to-br from-indigo-400 `;
-  const style = `flex flex-col justify-center border shadow-2xl ${bgColor} ${ playerInputAllowed ? 'hover:bg-slate-300' : ''}`;
+  const bgColor = `${pieceBackground ? pieceBackground + ' square-color-fill' : ''} bg-gradient-to-br ${playerInputAllowed ? 'from-indigo-400' : 'from-indigo-500'} `;
+  const style = `flex flex-col justify-center border shadow-2xl ${bgColor} ${ playerInputAllowed ? !pieceAtPosition ? 'hover:bg-slate-300' : '' : ''}`;
 
   useEffect(() => {
     setHoverText(null);
-  }, [pieceAtPosition]);
+  }, [pieceAtPosition, playerInputAllowed]);
 
   const handleHover = (ev: MouseEvent) => {
     //TODO: don't register if not interactive
@@ -26,7 +26,7 @@ const Square: React.FC<SquareProps> = ({playingFor, pieceAtPosition, isWinning, 
 
   return (
     <>
-      <span className="overflow-hidden relative w-full h-full bg-indigo-500">
+      <button disabled={!!pieceAtPosition || !playerInputAllowed} className="overflow-hidden relative w-full h-full bg-indigo-500">
         <div
           onMouseEnter={handleHover}
           onMouseOut={handleHover}
@@ -35,7 +35,7 @@ const Square: React.FC<SquareProps> = ({playingFor, pieceAtPosition, isWinning, 
         >
           {pieceString || hoverText}
         </div>
-      </span>
+      </button>
     </>
   );
 };

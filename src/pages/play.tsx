@@ -21,6 +21,7 @@ import { fadeElement, getCurrentDimension } from "~/lib/utils";
 import useSound from 'use-sound';
 
 import emoteList from '~/lib/emoteList';
+import KonamiBGComponent from "~/components/KonamiBGComponent";
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
 type EmitCallback = (response: RealtimeResponse) => void;
@@ -55,10 +56,7 @@ const Play: NextPage = () => {
   const [connected, setConnected] = useState(false);
   const [connectError, setConnectError] = useState("");
 
-  const keyPressesRef = useRef<Array<string>>([]);
-  const [showKonami, setShowKonami] = useState(false);
-
-  const [playClickOn] = useSound("click-on.mp3", { volume: 0.3});
+  const [playClickSFX] = useSound("click-on.mp3", { volume: 0.3});
 
   let playerInputAllowed = playingFor === nextPiece;
   if (games[games.length-1]?.winner !== null) playerInputAllowed = false;
@@ -145,52 +143,6 @@ const Play: NextPage = () => {
     }
   }, []);
 
-  // Konami code changes background :D
-  useEffect(() => {
-    const keyDownListener = (ev: globalThis.KeyboardEvent) => {
-      const keyPresses = keyPressesRef.current
-      if (keyPresses.length > 3) keyPresses.shift();
-      keyPresses.push(ev.key)
-      keyPressesRef.current = keyPresses;
-
-      const word = keyPresses.join("");
-      if (word === "suit") {
-        setShowKonami(true);
-      }
-    };
-
-    document.addEventListener('keydown', keyDownListener);
-
-    return () => {
-      document.removeEventListener('keydown', keyDownListener);
-    }
-  }, []);
-
-  useEffect(() => {
-    let konamiTimer: unknown;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const konamiBG = document.querySelector('.konami-overlay') as HTMLElement;
-
-    if (showKonami) {
-      konamiBG.style.display = 'block';
-      fadeElement(konamiBG, 400, 0, 1);
-
-      konamiTimer = setTimeout(() => {
-        setShowKonami(false);
-      }, 5000);
-    } else {
-      const fadeOutDelay = 400;
-      fadeElement(konamiBG, fadeOutDelay, 1, 0);
-      konamiTimer = setTimeout(() => {
-        konamiBG.style.display = 'none';
-      }, fadeOutDelay);
-    }
-
-    return () => {
-      if (konamiTimer) clearTimeout(konamiTimer as number);
-    }
-  }, [showKonami]);
-
   // Sign in animation
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -233,14 +185,14 @@ const Play: NextPage = () => {
   const handleSquareClicked = useCallback((boardId: number, squareId: number) => {
     if (!playerInputAllowed) return;
 
-    playClickOn();
+    playClickSFX();
 
     const currentBoard = boards.get(boardId);
     if (currentBoard.winner) return;
     if (currentBoard.positions[squareId]) return;
 
     socketRef.current.emit('clientUpdate', games.length-1, boardId, squareId, nextPiece);
-  }, [boards, games.length, nextPiece, playerInputAllowed, playClickOn]);
+  }, [boards, games.length, nextPiece, playerInputAllowed, playClickSFX]);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("username");
@@ -277,6 +229,8 @@ const Play: NextPage = () => {
     
       <main className="text-slate-200">
         <div className="background-overlay konami-overlay"></div>
+        <KonamiBGComponent triggerWord="suit" bgQuery=".konami-overlay"/>
+
         {!connected && 
           <LoaderComponent connectError={connectError} />
         }       
