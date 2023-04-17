@@ -253,14 +253,14 @@ const Play: NextPage = () => {
                 </div>
               </div>
 
-              <div className="m-2 md:m-5 flex flex-col lg:flex-row justify-center">
-                <div className="aspect-square max-w-screen max-h-screen min-w-[95vw] lg:min-w-0 lg:min-h-[75vh] lg:max-w-[75vw] lg:mr-5">
+              <div className="m-2 md:m-5 flex flex-col md:flex-row justify-center">
+                <div className="aspect-square max-w-screen max-h-screen min-w-[95vw] md:min-w-0 md:min-h-[75vh] md:max-w-[75vw] md:mr-5">
                   { games.map((game, index) => {
                     return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
                   })}
                 </div>
 
-                <div className="mt-5 min-w-full lg:mt-0 lg:min-w-0 lg:max-w-xs">
+                <div className="mt-5 min-w-full md:mt-0 md:min-w-0 md:max-w-xs">
                   <div className="flex gap-3">
                     <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleHowToPlay }>How to Play</button>
                     <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Nickname</button>
