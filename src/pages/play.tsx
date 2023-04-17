@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import Head from "next/head";
-import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, useMemo, KeyboardEvent } from "react";
+import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, useMemo } from "react";
 
 import Confetti from "react-confetti";
 

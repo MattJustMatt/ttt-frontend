@@ -10,7 +10,7 @@ const Square: React.FC<SquareProps> = ({playingFor, pieceAtPosition, isWinning, 
   if (pieceAtPosition === BoardPiece.O) pieceString = 'O';
 
   const pieceBackground = getColorClassForPiece(pieceAtPosition, isWinning);
-  const bgColor = `${pieceBackground ? pieceBackground + ' color-fill' : ''} bg-gradient-to-br from-indigo-400 `;
+  const bgColor = `${pieceBackground ? pieceBackground + ' square-color-fill' : ''} bg-gradient-to-br from-indigo-400 `;
   const style = `flex flex-col justify-center border shadow-2xl ${bgColor} ${ playerInputAllowed ? 'hover:bg-slate-300' : ''}`;
 
   useEffect(() => {

@@ -31,7 +31,7 @@ body {
   z-index: -1;
 }
 
-.color-fill {
+.square-color-fill {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -39,10 +39,10 @@ body {
   height: 200%;
   transform: translate(-50%, -50%) scale(0);
   border-radius: 50%;
-  animation: fillAnimation 750ms forwards;
+  animation: squareColorFillAnimation 750ms forwards;
 }
 
-@keyframes fillAnimation {
+@keyframes squareColorFillAnimation {
   0% {
     transform: translate(-50%, -50%) scale(0);
   }
@@ -51,7 +51,7 @@ body {
   }
 }
 
-@keyframes fadeOut {
+@keyframes emoteAnimation {
   12% {
     transform: scale(1.3);
     opacity: 0;
@@ -69,8 +69,8 @@ body {
   }
 }
 
-.fade-out {
-  animation-name: fadeOut;
+.emote-animate {
+  animation-name: emoteAnimation;
   animation-duration: 4s;
   animation-fill-mode: forwards;
 }
@@ -119,6 +119,8 @@ body {
   opacity: 0;
   overflow: visible;
   will-change: opacity;
+  --glow-container-width: 100%;
+  --glow-container-height: 100%;
 }
 
 .glow-blur,

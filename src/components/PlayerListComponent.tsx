@@ -77,7 +77,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
                   : {formatNumberWithCommas(player.score)} pts
                 </h2>
                 {emoteList.find(emote => emote.slug === player.currentEmoteSlug) && 
-                  <div className="ml-5 rounded-full p-1 bg-white bg-opacity-80 shadow inline-block fade-out">
+                  <div className="ml-5 rounded-full p-1 bg-white bg-opacity-80 shadow inline-block emote-animate">
                     <Image
                       src={`/emotes/${emoteList.find(emote => emote.slug === player.currentEmoteSlug).pathName}`}
                       alt={player.currentEmoteSlug || 'Default'}
