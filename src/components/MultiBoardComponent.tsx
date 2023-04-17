@@ -33,17 +33,21 @@ const MultiBoardComponent: React.FC<MultiBoardProps> = ({ game, boards, playingF
   }, [boards]);
 
   useEffect(() => {
-    const countdownTimer = setInterval(() => {
-      setNextGameCountdown((prevCountdown) => {
-        if (prevCountdown === 1) clearInterval(countdownTimer);
+    let countdownTimer: unknown;
 
-        return prevCountdown-1;
-      });
-    }, 1000);
+    if (game.winner !== null) {
+      countdownTimer = setInterval(() => {
+        setNextGameCountdown((prevCountdown) => {
+          if (prevCountdown === 1) clearInterval(countdownTimer as number);
+  
+          return prevCountdown-1;
+        });
+      }, 1000);
+    }
 
     return () => {
       setNextGameCountdown(NEXT_GAME_DELAY);
-      clearInterval(countdownTimer);
+      if (countdownTimer) clearInterval(countdownTimer as number);
     }
   }, [game.winner]);
 
