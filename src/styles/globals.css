@@ -3,5 +3,161 @@
 @tailwind utilities;
 
 body {
-    @apply bg-slate-900;
+  position: relative;
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(to right, rgba(33, 142, 215, 1), rgba(92, 42, 174, 1));
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(6, 31, 48, 1), rgba(21, 15, 46, 1));
+  z-index: -1;
+}
+
+.square-color-fill {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%) scale(0);
+  border-radius: 50%;
+  animation: squareColorFillAnimation 750ms forwards;
+}
+
+@keyframes squareColorFillAnimation {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes emoteAnimation {
+  12% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  90% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.emote-animate {
+  animation-name: emoteAnimation;
+  animation-duration: 4s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes flicker {
+  0% {
+    --tw-bg-opacity: 0.3;
+  }
+  100% {
+    --tw-bg-opacity: 0.4;
+  }
+}
+
+@keyframes ping {
+  25% {
+      transform: scale(1.3);
+      opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-ping-once {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Glow effect inspired by Kevin Powell / Aaron Iker (https://www.youtube.com/watch?v=fcnDBP3k3BE) */
+.glow-effect {
+  --glow-line-color: #ffffff;
+  --glow-line-thickness: 2px;
+  --glow-line-length: 20px;
+  --glow-blur-color: #fff;
+  --glow-blur-size: 5px;
+  --animation-speed: 30000ms;
+  position: relative;
+}
+
+.glow-container {
+  pointer-events: none;
+  position: absolute;
+  inset: calc(var(--container-offset) / -2);
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  overflow: visible;
+  will-change: opacity;
+  --glow-container-width: 100%;
+  --glow-container-height: 100%;
+}
+
+.glow-blur,
+.glow-line {
+  width: var(--glow-container-width);
+  height: var(--glow-container-height);
+  y: -100%;
+  fill: transparent;
+  stroke-dasharray: var(--glow-line-length) calc(50px - var(--glow-line-length));
+}
+
+.glow-line,
+.glow-blur {
+  animation: dashoffset-animation var(--animation-speed) linear infinite;
+  will-change: stroke-dashoffset;
+}
+
+@keyframes dashoffset-animation {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -350px;
+  }
+}
+
+.glow-line {
+  stroke: var(--glow-line-color);
+  stroke-width: var(--glow-line-thickness);
+}
+
+.glow-blur {
+  filter: blur(var(--glow-blur-size));
+  stroke: var(--glow-blur-color);
+  stroke-width: var(--glow-blur-size);
+}
+
+.glow-effect .glow-container {
+  opacity: 1;
+  transition-property: opacity;
+  transition-duration: 1s;
+  animation: glow-visibility ease-in-out 500ms forwards;
+}
+
+@keyframes glow-visibility {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }

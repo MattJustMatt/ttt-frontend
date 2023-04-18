@@ -1,27 +1,26 @@
+import { memo } from 'react';
 import Square from './SquareComponent';
 
-const Board: React.FC<BoardProps> = ({ positions, ended, winningLine }) => {
-  Board.displayName = "Board";
-  const isEmpty = !positions.find((square => square === 1 || square === 2));
-
+const Board: React.FC<BoardProps> = memo(({ positions, ended, winningLine }) => {
   return (
     <>
-      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${isEmpty ? 'ring-4 ring-blue-500' : ''} ${ended ? 'opacity-0  duration-500 md:delay-700' : ''}`}>
+      <div className={`grid grid-cols-3 grid-rows-3 text-center font-bold sm:text-sm md:text-2xl aspect-square ${ended ? 'opacity-0  duration-500 md:delay-700' : ''}`}>
         {Array.from({ length: 9 }).map((_, index) => (
           <Square
             key={index}
-            isWinning={winningLine.includes(index)}
-            playerAtPosition={positions[index]}
+            isWinning={winningLine?.includes(index)}
+            pieceAtPosition={positions[index]}
           />
         ))}
       </div>
     </>
-  )
-};
+  );
+});
+Board.displayName = "Board";
 
 type BoardProps = {
   positions: Array<number>;
-  winningLine: Array<number>;
+  winningLine?: Array<number>;
   ended: boolean;
 };
 
