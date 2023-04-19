@@ -1,6 +1,7 @@
 import { type NextPage } from "next";
 import Head from "next/head";
 import { type Reducer, useEffect, useReducer, useRef, useState, useCallback, useMemo } from "react";
+import useSound from 'use-sound';
 
 import Confetti from "react-confetti";
 
@@ -17,8 +18,6 @@ import LoaderComponent from "~/components/LoaderComponent";
 import EmoteDrawerComponent from "~/components/EmoteDrawerComponent";
 
 import { fadeElement, getCurrentDimension } from "~/lib/utils";
-
-import useSound from 'use-sound';
 
 import emoteList from '~/lib/emoteList';
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
@@ -106,29 +105,29 @@ const Play: NextPage = () => {
     });
 
     socketRef.current.on('update', (gameId: number, boardId: number, squareId: number, updatedPiece: BoardPiece) => {
-      const nextPiece = updatedPiece === BoardPiece.X ? BoardPiece. O : BoardPiece.X
-      setNextPiece(nextPiece);
-
+      setNextPiece(updatedPiece === BoardPiece.X ? BoardPiece. O : BoardPiece.X);
       dispatchBoards({ type: 'update_square', boardId: boardId, position: squareId, newPlayer: updatedPiece});
     });
 
     socketRef.current.on('end', (gameId, boardId, winner, winningLine, winnerUsername) => {
       if (boardId !== null) {
         dispatchBoards({ type: 'end_board', boardId: boardId, winner: winner, winningLine: winningLine});
-        return;
+      } else {
+        // If there was no boardId included, that means the full game is over (a winning line was found in the broader board set)!
+        setGames((prevGames) => {
+          const gamesClone = prevGames.slice();
+          gamesClone[gamesClone.length - 1].winner = winner;
+          gamesClone[gamesClone.length - 1].winningLine = winningLine;
+          gamesClone[gamesClone.length - 1].winnerUsername = winnerUsername;
+  
+          return gamesClone;
+        });
       }
-    
-      // If there was no boardId included, that means the full game is over (a winning line was found in the broader boards)!
-      setGames((prevGames) => {
-        const gamesClone = prevGames.slice();
-        gamesClone[gamesClone.length - 1].winner = winner;
-        gamesClone[gamesClone.length - 1].winningLine = winningLine;
-        gamesClone[gamesClone.length - 1].winnerUsername = winnerUsername;
-
-        return gamesClone;
-      });
     });
+  }, []);
 
+  // Updated window size is used to scale win confetti
+  useEffect(() => {
     const updateDimension = () => {
       setScreenSize(getCurrentDimension())
     }
@@ -142,7 +141,7 @@ const Play: NextPage = () => {
     }
   }, []);
 
-  // Sign in animation
+  // Darken the background when they're signed out, and fade it in when they sign in.
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const brightBG = document.querySelector('.background-overlay') as HTMLElement;
@@ -158,9 +157,9 @@ const Play: NextPage = () => {
       setUIOpacity(0);
       fadeElement(brightBG, 750, 0, 1);
     }
-  }, [hasUsername]);
+  }, [hasUsername]); // Not including uiOpacity is a hack to prevent the animation from re-running. Should be fixed
 
-  // Board loading animation
+  // After they sign in, we want to fade the UI in gradually. TODO: these effects could probably be merged
   useEffect(() => {
     if (loadAnimationCompleted) {
       setTimeout(() => {
@@ -168,6 +167,14 @@ const Play: NextPage = () => {
       }, 100);
     }
   }, [loadAnimationCompleted]);
+
+  const handleSquareClicked = useCallback((boardId: number, squareId: number) => {
+    if (!playerInputAllowed) return;
+
+    playClickSFX();
+
+    socketRef.current.emit('clientUpdate', games.length-1, boardId, squareId, nextPiece);
+  }, [games.length, nextPiece, playerInputAllowed, playClickSFX]);
 
   const handleSetUsername = useCallback((username: string, callback: (response: RealtimeResponse) => void) => {
     socketRef.current.emit('requestUsername', username, (response: RealtimeResponse) => {
@@ -181,17 +188,16 @@ const Play: NextPage = () => {
     });
   }, []);
 
-  const handleSquareClicked = useCallback((boardId: number, squareId: number) => {
-    if (!playerInputAllowed) return;
-
-    playClickSFX();
-
-    const currentBoard = boards.get(boardId);
-    if (currentBoard.winner) return;
-    if (currentBoard.positions[squareId]) return;
-
-    socketRef.current.emit('clientUpdate', games.length-1, boardId, squareId, nextPiece);
-  }, [boards, games.length, nextPiece, playerInputAllowed, playClickSFX]);
+  const handleSendEmote = useCallback((emote: Emote) => {
+    if (allowedToSendEmote) {
+      setShowEmoteDrawer(false);
+      setAllowedToSendEmote(false);
+      setTimeout(() => {
+        setAllowedToSendEmote(true);
+      }, 4000);
+      socketRef.current.emit('emote', emote.slug);
+    }
+  }, [allowedToSendEmote]);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("username");
@@ -205,17 +211,6 @@ const Play: NextPage = () => {
   const handleShowEmoteDrawerClicked = useCallback(() => {
     setShowEmoteDrawer(!showEmoteDrawer);
   }, [showEmoteDrawer]);
-
-  const sendEmote = useCallback((emote: Emote) => {
-    if (allowedToSendEmote) {
-      setShowEmoteDrawer(false);
-      setAllowedToSendEmote(false);
-      setTimeout(() => {
-        setAllowedToSendEmote(true);
-      }, 4000);
-      socketRef.current.emit('emote', emote.slug);
-    }
-  }, [allowedToSendEmote]);
 
   return (
     <>
@@ -268,7 +263,7 @@ const Play: NextPage = () => {
                     <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Emotes</button>
                   </div>
                   
-                  {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={sendEmote} allowedToSendEmote={allowedToSendEmote}/>}
+                  {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={handleSendEmote} allowedToSendEmote={allowedToSendEmote}/>}
                   <PlayerListComponent players={playerList} emoteList={emoteList} playerId={playerId} maxDisplayedPlayers={38} socketRef={socketRef}/>
                 </div>
               </div>

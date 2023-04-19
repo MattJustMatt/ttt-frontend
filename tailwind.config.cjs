@@ -5,9 +5,7 @@ const config = {
   theme: {
     extend: {},
   },
-  plugins: [
-    require('tailwind-scrollbar'),
-  ],
+  plugins: [],
 };
 
 module.exports = config;
