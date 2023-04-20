@@ -3,12 +3,13 @@ import Head from "next/head";
 import { useRouter } from 'next/router';
 import Image from 'next/image'
 
+import { useRef, useEffect, useReducer, useState, useCallback } from "react";
+
 import BoardComponent from '~/components/BoardComponent';
 
 import boardsReducer from "~/reducers/boardsReducer";
 
-import { useRef, useEffect, useReducer, useState, useCallback } from "react";
-import TTTRealtimeSocket from "~/lib/TTTRealtimeSocket";
+import AutoBoardBinarySocket from "~/lib/AutoBoardBinarySocket";
 import { type Board } from "~/types/GameTypes";
 import { getCurrentDimension } from "~/lib/utils";
 
@@ -20,42 +21,27 @@ const Home: NextPage = () => {
   const router = useRouter();
   const [showModal, setShowModal] = useState(true);
   
-  const realtimeSocketRef = useRef<TTTRealtimeSocket>();
-  const totalUpdatesRef = useRef(0);
+  const realtimeSocketRef = useRef<AutoBoardBinarySocket>();
   const maxBoardsRef = useRef(5);
-
-  const endedGames = useRef([]);
 
   const [boards, dispatchBoards] = useReducer(boardsReducer, new Map());
 
   const handleGameCreated = (gameId: number) => {
-    totalUpdatesRef.current = totalUpdatesRef.current + 1;
-  
     dispatchBoards({ type: 'create', boardId: gameId, maxBoards: maxBoardsRef.current });
   };
 
   const handleGameUpdated = (gameId: number, position: number, newPlayer: number) => {
-    totalUpdatesRef.current = totalUpdatesRef.current + 1;
-  
-    if (endedGames.current.includes(gameId)) {
-      console.error(`Received update for ended game ${gameId}`);
-      return;
-    }
-  
     dispatchBoards({ type: 'update_square', boardId: gameId, position: position, newPlayer: newPlayer });
   };
 
   const handleGameEnded = (gameId: number, winner: number, winningLine: Array<number>) => {
-    totalUpdatesRef.current = totalUpdatesRef.current + 1;
-
     dispatchBoards({ type: 'end_board', boardId: gameId, winner: winner, winningLine: winningLine });
   }
 
-  // Initial setup
   useEffect(() => {
     document.body.classList.add("signed-in");
 
-    realtimeSocketRef.current = new TTTRealtimeSocket(REMOTE_WS_URL, handleGameCreated, handleGameUpdated, handleGameEnded, () => { return null; });
+    realtimeSocketRef.current = new AutoBoardBinarySocket(REMOTE_WS_URL, handleGameCreated, handleGameUpdated, handleGameEnded, () => { return null; });
 
     realtimeSocketRef.current.onConnected = () => {
       console.log("[REALTIME] Connected");
@@ -119,7 +105,7 @@ const Home: NextPage = () => {
         </div>
 
         {showModal && 
-          <div className="fixed inset-0 z-50 flex items-center justify-center w-full h-full max-w-screen max-h-screen p-4 overflow-x-hidden overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center w-full h-full max-w-screen max-h-screen p-4">
             <div className="relative w-auto max-w-lg max-h-full">
               <div className="relative bg-white rounded-lg shadow overflow-auto dark:bg-gray-700">
                 <div className="flex items-center justify-between p-5 border-b rounded-t dark:border-gray-600">

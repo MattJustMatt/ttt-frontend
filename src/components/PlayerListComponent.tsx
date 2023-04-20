@@ -11,10 +11,11 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
 
   const formattedPlayers = players.slice(0, maxDisplayedPlayers).sort((a, b) => Number(b.online) - Number(a.online));
 
+  // TODO: These should be computed on the server, and offline clients should not be sent down, or at least truncated, by default
   const xTotalScore = players.filter(player => player.playingFor === BoardPiece.X).reduce((score, player) => score + player.score, 0);
   const oTotalScore = players.filter(player => player.playingFor === BoardPiece.O).reduce((score, player) => score + player.score, 0);
 
-  const processEmote = useCallback((playerId: number, emoteSlug: string) => {
+  const tempMapPlayerToEmote = useCallback((playerId: number, emoteSlug: string) => {
     setEmoteMap((prevEmoteMap) => {
       return new Map(prevEmoteMap).set(playerId, emoteList.find((emote) => emote.slug === emoteSlug));
     });
@@ -32,19 +33,20 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
     }, 4000);
   }, [emoteList, formattedPlayers]);
 
+  Array.from(emoteMap.keys()).forEach((playerIdEmoted) => {
+    formattedPlayers.find((player) => player.id === playerIdEmoted).currentEmoteSlug = emoteMap.get(playerIdEmoted).slug;
+  });
+
+  // I'd like to find a cleaner abstraction rather than passing the socket down..
   useEffect(() => {
-    socketRef.current.on('emote', processEmote);
+    socketRef.current.on('emote', tempMapPlayerToEmote);
 
     return () => {
       // should be ok because the socket reference itself never changes. if it does in the future, change this.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      socketRef.current.off('emote', processEmote);
+      socketRef.current.off('emote', tempMapPlayerToEmote);
     }
-  }, [processEmote, socketRef]);
-
-  Array.from(emoteMap.keys()).forEach((playerIdEmoted) => {
-    formattedPlayers.find((player) => player.id === playerIdEmoted).currentEmoteSlug = emoteMap.get(playerIdEmoted).slug;
-  });
+  }, [tempMapPlayerToEmote, socketRef]);
 
   return (
     <>

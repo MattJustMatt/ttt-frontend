@@ -70,7 +70,7 @@ const NickInputComponent: React.FC<NickInputProps> = ({ setUsername }) => {
           <button className={`${validation.valid ? 'bg-blue-500' : 'bg-gray-600'} ${validation.valid ? 'hover:bg-blue-700' : ''} text-white font-bold py-2 px-4 rounded`} type="submit">Play</button>
         </form>
 
-        { validation.showMessage && <h2 className="text-red-500 mt-2 font-2xl">{validation.message}</h2>}
+        { validation.showMessage && <h2 className="text-red-500 mt-2 font-2xl p-5">{validation.message}</h2>}
       </div>
     </>
   );

@@ -20,6 +20,7 @@ import EmoteDrawerComponent from "~/components/EmoteDrawerComponent";
 import { fadeElement, getCurrentDimension } from "~/lib/utils";
 
 import emoteList from '~/lib/emoteList';
+import GameHeaderComponent from "~/components/GameHeaderComponent";
 const REMOTE_GAMEPLAY_URL = process.env.NEXT_PUBLIC_REMOTE_GAMEPLAY_URL;
 
 type EmitCallback = (response: RealtimeResponse) => void;
@@ -232,24 +233,11 @@ const Play: NextPage = () => {
         }
         {connected && hasUsername && loadAnimationCompleted && <>
           <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
-              {(games[games.length-1] && games[games.length-1].winner !== null) && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
-
-              <div className={`text-white text-center p-1 nd:p-0 space-x-1 transition-all duration-200 bg-slate-200 text-lg md:text-2xl shadow-2xl ${playerInputAllowed ? 'bg-opacity-10' : 'bg-opacity-40'}`}>
-                <div className="flex flex-wrap justify-center items-center">
-                  <p>You&apos;re team <span className={`font-bold ${playingFor === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{playingFor === BoardPiece.X ? 'X' : 'O'}&apos;s</span></p>
-                  
-                  {playerInputAllowed && <span className="font-bold">&nbsp;make a move!</span>}
-                  
-                  {!playerInputAllowed && (<>
-                    <p className="whitespace-nowrap">&nbsp;but, it&apos;s team <span className={`font-bold ${nextPiece === BoardPiece.X ? 'bg-orange-400' : 'bg-green-400'}`}>{nextPiece === BoardPiece.X ? 'X' : 'O'}&apos;s</span> turn.</p>
-                  
-                    <p className="font-extrabold">&nbsp;Invite a friend to continue!</p>
-                  </>)}
-                </div>
-              </div>
+              {games[games.length-1]?.winner !== null && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
+              <GameHeaderComponent playingFor={playingFor} nextPiece={nextPiece} playerInputAllowed={playerInputAllowed}/>
 
               <div className="m-2 md:m-5 flex flex-col md:flex-row justify-center">
-                <div className="aspect-square max-w-screen max-h-screen min-w-[95vw] md:min-w-0 md:min-h-[75vh] md:max-w-[75vw] md:mr-5">
+                <div className="aspect-square max-w-screen max-h-screen md:min-w-0 md:min-h-[75vh] md:max-w-[75vw] md:mr-5">
                   { games.map((game, index) => {
                     return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
                   })}

@@ -1,7 +1,7 @@
 
 import msgpack from 'msgpack5';
 
-class TTTRealtimeSocket {
+class AutoBoardBinarySocket {
   websocket: WebSocket;
   url: string;
   msgPack;
@@ -99,4 +99,4 @@ class TTTRealtimeSocket {
   }
 }
 
-export default TTTRealtimeSocket;
+export default AutoBoardBinarySocket;
