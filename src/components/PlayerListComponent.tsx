@@ -6,18 +6,18 @@ import Image from 'next/image';
 import { type Socket } from "socket.io-client";
 import type { ClientToServerEvents, ServerToClientEvents } from "~/types/SocketTypes";
 
-const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId, maxDisplayedPlayers, emoteList, socketRef }) => {
-  const [emoteMap, setEmoteMap] = useState<Map<number, Emote>>(new Map());
+const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, selfUuid: selfUuid, maxDisplayedPlayers, emoteList, socketRef }) => {
+  const [emoteMap, setEmoteMap] = useState<Map<string, Emote>>(new Map());
 
-  const formattedPlayers = players.slice(0, maxDisplayedPlayers).sort((a, b) => Number(b.online) - Number(a.online));
+  const formattedPlayers = players.sort((a, b) => Number(b.online) - Number(a.online)).slice(0, maxDisplayedPlayers);
 
   // TODO: These should be computed on the server, and offline clients should not be sent down, or at least truncated, by default
   const xTotalScore = players.filter(player => player.playingFor === BoardPiece.X).reduce((score, player) => score + player.score, 0);
   const oTotalScore = players.filter(player => player.playingFor === BoardPiece.O).reduce((score, player) => score + player.score, 0);
 
-  const tempMapPlayerToEmote = useCallback((playerId: number, emoteSlug: string) => {
+  const tempMapPlayerToEmote = useCallback((playerUuid: string, emoteSlug: string) => {
     setEmoteMap((prevEmoteMap) => {
-      return new Map(prevEmoteMap).set(playerId, emoteList.find((emote) => emote.slug === emoteSlug));
+      return new Map(prevEmoteMap).set(playerUuid, emoteList.find((emote) => emote.slug === emoteSlug));
     });
 
     // Clear the emote from the map after the animation is done (4s)
@@ -25,8 +25,8 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
     setTimeout(() => {
       setEmoteMap((prevEmoteMap) => {
         const newEmoteMap = new Map(prevEmoteMap);
-        newEmoteMap.delete(playerId);
-        formattedPlayers.find((player) => player.id === playerId).currentEmoteSlug = null;
+        newEmoteMap.delete(playerUuid);
+        formattedPlayers.find((player) => player.uuid === playerUuid).currentEmoteSlug = null;
 
         return newEmoteMap;
       });
@@ -34,7 +34,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
   }, [emoteList, formattedPlayers]);
 
   Array.from(emoteMap.keys()).forEach((playerIdEmoted) => {
-    formattedPlayers.find((player) => player.id === playerIdEmoted).currentEmoteSlug = emoteMap.get(playerIdEmoted).slug;
+    formattedPlayers.find((player) => player.uuid === playerIdEmoted).currentEmoteSlug = emoteMap.get(playerIdEmoted).slug;
   });
 
   // I'd like to find a cleaner abstraction rather than passing the socket down..
@@ -66,9 +66,9 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
         <div className="p-3">
           {formattedPlayers.map((player) => {
             return (
-              <div className="relative flex items-center" key={player.id}>
+              <div className="relative flex items-center" key={player.uuid}>
                 <h2 className="text-md md:text-xl">
-                  <span className={`${player.online ? 'text-white' : 'text-slate-400'} ${player.id === playerId ? 'font-extrabold' : ''}`}>
+                  <span className={`${player.online ? 'text-white' : 'text-slate-400'} ${player.uuid === selfUuid ? 'font-extrabold' : ''}`}>
                     {player.username}&nbsp;
                   </span>
 
@@ -82,7 +82,7 @@ const PlayerListComponent: React.FC<PlayerListProps> = memo(({ players, playerId
                   <div className="ml-5 rounded-full p-1 bg-white bg-opacity-80 shadow inline-block emote-animate">
                     <Image
                       src={`/emotes/${emoteList.find(emote => emote.slug === player.currentEmoteSlug).pathName}`}
-                      alt={player.currentEmoteSlug || 'Default'}
+                      alt={player.currentEmoteSlug}
                       width={64}
                       height={64}
                     />
@@ -100,7 +100,7 @@ PlayerListComponent.displayName = "PlayerListComponent";
 
 type PlayerListProps = {
   players: Array<SanitizedPlayer>;
-  playerId: number;
+  selfUuid: string;
   maxDisplayedPlayers: number;
   emoteList: Array<Emote>;
   socketRef: MutableRefObject<Socket<ServerToClientEvents, ClientToServerEvents>>;

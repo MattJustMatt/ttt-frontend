@@ -34,7 +34,7 @@ declare module "socket.io-client" {
 }
 
 const Play: NextPage = () => {
-  const [playerId, setPlayerId] = useState<number | null>(null);
+  const [playerUuid, setPlayerUuid] = useState<string | null>(null);
   
   const [nextPiece, setNextPiece] = useState<BoardPiece>();
   const [games, setGames] = useState<Array<Game>>([]);
@@ -43,7 +43,7 @@ const Play: NextPage = () => {
   const [playerList, setPlayerList] = useState<Array<SanitizedPlayer>>([]);
   const [showEmoteDrawer, setShowEmoteDrawer] = useState(false);
   const [allowedToSendEmote, setAllowedToSendEmote] = useState(true);
-  const [hasUsername, setHasUsername] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
 
   const [loadAnimationCompleted, setLoadAnimationCompleted] = useState(false);
   const [uiOpacity, setUIOpacity] = useState(0);
@@ -63,9 +63,9 @@ const Play: NextPage = () => {
   const memoizedBoards = useMemo(() => Array.from(boards.values()), [boards]);
 
   useEffect(() => {
-    const localUsername = localStorage.getItem("username");
-    setHasUsername(!!localUsername); // This will be reset later if the server rejects the localStorage username
-    const authMessage = !!localUsername ? { username: localUsername } : {};
+    const localStorageUsername = localStorage.getItem("username");
+    setUsername(localStorageUsername); // This will be reset later if the server rejects the localStorage username
+    const authMessage = !!localStorageUsername ? { username: localStorageUsername } : {};
 
     socketRef.current = io(REMOTE_GAMEPLAY_URL, { 
       transports: ["websocket"], auth: authMessage
@@ -96,8 +96,8 @@ const Play: NextPage = () => {
     });
 
     socketRef.current.on('playerInformation', (playerId, username, playingFor) => {
-      setPlayerId(playerId);
-      setHasUsername(!!username);
+      setPlayerUuid(playerId);
+      setUsername(username);
       setPlayingFor(playingFor);
     });
 
@@ -127,6 +127,13 @@ const Play: NextPage = () => {
     });
   }, []);
 
+  // Keep our socket auth username in sync with any username changes for reconnections
+  useEffect(() => {
+    if (username !== null) {
+      socketRef.current.auth = { username: username };
+    }
+  }, [username]);
+
   // Updated window size is used to scale win confetti
   useEffect(() => {
     const updateDimension = () => {
@@ -147,7 +154,7 @@ const Play: NextPage = () => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const brightBG = document.querySelector('.background-overlay') as HTMLElement;
 
-    if (hasUsername) {
+    if (username) {
       fadeElement(brightBG, 1000, 1, 0);
 
       setTimeout(() => {
@@ -158,7 +165,7 @@ const Play: NextPage = () => {
       setUIOpacity(0);
       fadeElement(brightBG, 750, 0, 1);
     }
-  }, [hasUsername]); // Not including uiOpacity is a hack to prevent the animation from re-running. Should be fixed
+  }, [username]); // Not including uiOpacity is a hack to prevent the animation from re-running. Should be fixed
 
   // After they sign in, we want to fade the UI in gradually. TODO: these effects could probably be merged
   useEffect(() => {
@@ -185,7 +192,7 @@ const Play: NextPage = () => {
       }
 
       localStorage.setItem('username', username);
-      setHasUsername(true);
+      setUsername(username);
     });
   }, []);
 
@@ -202,7 +209,7 @@ const Play: NextPage = () => {
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("username");
-    setHasUsername(false);
+    setUsername(null);
   }, []);
 
   const handleHowToPlay = useCallback(() => {
@@ -228,10 +235,10 @@ const Play: NextPage = () => {
         {!connected && 
           <LoaderComponent connectError={connectError} />
         }       
-        {connected && !hasUsername &&
+        {connected && username === null &&
           <NickInputComponent setUsername={handleSetUsername} />
         }
-        {connected && hasUsername && loadAnimationCompleted && <>
+        {connected && username && loadAnimationCompleted && <>
           <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
               {games[games.length-1]?.winner !== null && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
               <GameHeaderComponent playingFor={playingFor} nextPiece={nextPiece} playerInputAllowed={playerInputAllowed}/>
@@ -252,7 +259,7 @@ const Play: NextPage = () => {
                   </div>
                   
                   {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={handleSendEmote} allowedToSendEmote={allowedToSendEmote}/>}
-                  <PlayerListComponent players={playerList} emoteList={emoteList} playerId={playerId} maxDisplayedPlayers={38} socketRef={socketRef}/>
+                  <PlayerListComponent players={playerList} emoteList={emoteList} selfUuid={playerUuid} maxDisplayedPlayers={30} socketRef={socketRef}/>
                 </div>
               </div>
             </div></>
