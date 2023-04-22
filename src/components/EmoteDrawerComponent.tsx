@@ -4,7 +4,7 @@ import Image from 'next/image';
 const EmoteDrawerComponent: React.FC<EmoteDrawerProps> = ({ emoteList, sendEmote, allowedToSendEmote }) => {
   return (
     <>
-      <div className={`p-3 bg-opacity-10 bg-slate-200 flex flex-wrap gap-x-3 justify-center ${!allowedToSendEmote ? 'grayscale' : ''}`}>
+      <div className={`p-3 mt-2 bg-opacity-10 bg-slate-200 flex flex-wrap gap-x-4 gap-y-2 justify-center ${!allowedToSendEmote ? 'grayscale' : ''}`}>
         { emoteList.map((emote, index) => {
           const animationDelay = index * 35;
           return (
