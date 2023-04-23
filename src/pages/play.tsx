@@ -53,7 +53,7 @@ const Play: NextPage = () => {
 
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents>>();
   const [connected, setConnected] = useState(false);
-  const [connectError, setConnectError] = useState("");
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const [playClickSFX] = useSound("click-on.mp3", { volume: 0.3});
 
@@ -67,15 +67,13 @@ const Play: NextPage = () => {
     setUsername(localStorageUsername); // This will be reset later if the server rejects the localStorage username
     const authMessage = !!localStorageUsername ? { username: localStorageUsername } : {};
 
-    socketRef.current = io(REMOTE_GAMEPLAY_URL, { 
-      transports: ["websocket"], auth: authMessage
-    });
+    socketRef.current = io(REMOTE_GAMEPLAY_URL, { transports: ["websocket"], auth: authMessage});
 
     socketRef.current.on("connect", () => {
       socketRef.current.sendBuffer = [];
       
       setConnected(true);
-      setConnectError("");
+      setConnectError(null);
     });
 
     socketRef.current.on('disconnect', () => {
@@ -159,22 +157,17 @@ const Play: NextPage = () => {
 
       setTimeout(() => {
         setLoadAnimationCompleted(true);
-      }, 400);
+
+        setTimeout(() => {
+          setUIOpacity(1);
+        }, 100);
+      }, 100);
     } else if (uiOpacity !== 0) {
       setLoadAnimationCompleted(false)
       setUIOpacity(0);
-      fadeElement(brightBG, 750, 0, 1);
+      fadeElement(brightBG, 500, 0, 1);
     }
   }, [username]); // Not including uiOpacity is a hack to prevent the animation from re-running. Should be fixed
-
-  // After they sign in, we want to fade the UI in gradually. TODO: these effects could probably be merged
-  useEffect(() => {
-    if (loadAnimationCompleted) {
-      setTimeout(() => {
-        setUIOpacity(1);
-      }, 100);
-    }
-  }, [loadAnimationCompleted]);
 
   const handleSquareClicked = useCallback((boardId: number, squareId: number) => {
     if (!playerInputAllowed) return;
@@ -224,7 +217,7 @@ const Play: NextPage = () => {
     <>
       <Head>
         <title>Tic Tac YOOO - Beta</title>
-        <meta name="description" content="Experience Tic Tac Toe like never before. 3x3x3 Multiplayer Tic Tac Toe" />
+        <meta name="description" content="Experience Tic Tac Toe like never before. 3x3x9 Multiplayer Tic Tac Toe" />
         <meta name="keywords" content="Tic Tac Toe, multiplayer, realtime, online, game, viewing experience" />
         <link rel="icon" href="/favicon.ico" />
       </Head>

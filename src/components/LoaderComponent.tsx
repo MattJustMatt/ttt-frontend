@@ -1,5 +1,5 @@
 
-const LoaderComponent: React.FC<LoaderProps> =  ({connectError}) => {
+const LoaderComponent: React.FC<LoaderProps> =  ( {connectError }) => {
   return (
     <>
       <div className="grid h-screen place-items-center">
@@ -17,7 +17,7 @@ const LoaderComponent: React.FC<LoaderProps> =  ({connectError}) => {
 }
 
 type LoaderProps = {
-  connectError: string;
+  connectError: string | null;
 };
 
 export default LoaderComponent;
