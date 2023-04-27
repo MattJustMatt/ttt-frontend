@@ -54,7 +54,7 @@ const MultiBoardComponent: React.FC<MultiBoardProps> = ({ game, boards, playingF
   return (
     <>
       { game.winner !== null &&
-        <div className={`m-10 p-10 text-slate-200 shadow-2xl font-semibold text-center ${getColorClassForPiece(game.winner, true)}`}>
+        <div className={`py-10 text-slate-200 shadow-2xl font-semibold text-center ${getColorClassForPiece(game.winner, true)}`}>
           <h2 className="text-5xl">{ game.winner === BoardPiece.DRAW ? 'NOBODY' : game.winner === BoardPiece.X ? 'X' : 'O'} WINS!</h2>
           <h3 className="text-3xl mt-2">The {game.winner === BoardPiece.DRAW ? 'last' : 'winning'} move was made by <span className="font-extrabold">{game.winnerUsername}</span></h3>
           <p>The next game will start in {nextGameCountdown}s</p>
