@@ -233,30 +233,30 @@ const Play: NextPage = () => {
         }
         {connected && username && loadAnimationCompleted && <>
           <div className={`${uiOpacity === 1 ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
-              {games[games.length-1]?.winner !== null && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
-              <GameHeaderComponent playingFor={playingFor} nextPiece={nextPiece} playerInputAllowed={playerInputAllowed}/>
+            {games[games.length-1]?.winner !== null && <Confetti width={screenSize.width-25} height={screenSize.height-5} />}
+            <GameHeaderComponent playingFor={playingFor} nextPiece={nextPiece} playerInputAllowed={playerInputAllowed}/>
 
-              <div className="m-2 md:m-5 flex flex-col md:flex-row justify-center">
-                <div className="aspect-square max-w-screen max-h-screen md:min-w-0 md:min-h-[75vh] md:max-w-[75vw] md:mr-5">
-                  { games.map((game, index) => {
-                    return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
-                  })}
-                </div>
-
-                <div className="mt-5 min-w-full md:mt-0 md:min-w-0 md:max-w-xs">
-                  <div className="flex gap-3">
-                    <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleHowToPlay }>How to Play</button>
-                    <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Nickname</button>
-
-                    <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Emotes</button>
-                  </div>
-                  
-                  {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={handleSendEmote} allowedToSendEmote={allowedToSendEmote}/>}
-                  <PlayerListComponent players={playerList} emoteList={emoteList} selfUuid={playerUuid} maxDisplayedPlayers={30} socketRef={socketRef}/>
-                </div>
+            <div className="m-2 md:m-5 flex flex-col md:flex-row justify-center">
+              <div className="aspect-square max-w-screen max-h-screen md:min-w-0 md:min-h-[75vh] md:max-w-[75vw] md:mr-5">
+                { games.map((game, index) => {
+                  return <MultiBoardComponent key={index} game={game} boards={memoizedBoards} playingFor={playingFor} playerInputAllowed={playerInputAllowed} handleSquareClicked={handleSquareClicked} />
+                })}
               </div>
-            </div></>
-          }
+
+              <div className="mt-5 min-w-full md:mt-0 md:min-w-0 md:max-w-xs">
+                <div className="flex gap-3">
+                  <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleHowToPlay }>How to Play</button>
+                  <button className={`bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded`} onClick={ handleLogout }>Change Nickname</button>
+
+                  <button className={`bg-purple-500 hover:bg-purple-700 font-bold py-2 px-4 rounded`} onClick={handleShowEmoteDrawerClicked}>Emotes</button>
+                </div>
+                
+                {showEmoteDrawer && <EmoteDrawerComponent emoteList={emoteList} sendEmote={handleSendEmote} allowedToSendEmote={allowedToSendEmote}/>}
+                <PlayerListComponent players={playerList} emoteList={emoteList} selfUuid={playerUuid} maxDisplayedPlayers={30} socketRef={socketRef}/>
+              </div>
+            </div>
+          </div></>
+        }
       </main>
     </>
   )  
