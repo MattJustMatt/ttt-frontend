@@ -190,14 +190,14 @@ const Play: NextPage = () => {
   }, []);
 
   const handleSendEmote = useCallback((emote: Emote) => {
-    if (allowedToSendEmote) {
-      setShowEmoteDrawer(false);
-      setAllowedToSendEmote(false);
-      setTimeout(() => {
-        setAllowedToSendEmote(true);
-      }, 4000);
-      socketRef.current.emit('emote', emote.slug);
-    }
+    if (!allowedToSendEmote) return;
+
+    setShowEmoteDrawer(false);
+    setAllowedToSendEmote(false);
+    setTimeout(() => {
+      setAllowedToSendEmote(true);
+    }, 4000);
+    socketRef.current.emit('emote', emote.slug);
   }, [allowedToSendEmote]);
 
   const handleLogout = useCallback(() => {
