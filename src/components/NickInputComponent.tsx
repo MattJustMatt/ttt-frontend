@@ -71,6 +71,7 @@ const NickInputComponent: React.FC<NickInputProps> = ({ setUsername }) => {
         </form>
 
         { validation.showMessage && <h2 className="text-red-500 mt-2 font-2xl p-5">{validation.message}</h2>}
+        <p>Please note, the username<i>Vikas</i> is reserved.</p>
       </div>
     </>
   );
